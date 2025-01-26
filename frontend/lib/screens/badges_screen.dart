@@ -1,3 +1,4 @@
+import 'package:domasna/components/back_button.dart';
 import 'package:flutter/material.dart';
 
 class BadgesScreen extends StatelessWidget {
@@ -42,30 +43,10 @@ class BadgesScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Align(
-                    alignment: Alignment.topLeft,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.black,
-                        elevation: 4,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Back',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
+                      alignment: Alignment.topLeft,
+                      child: CustomBackButton(
+                        onTap: () => Navigator.pop(context),
+                      )),
                 ),
                 Expanded(
                   child: ListView.builder(

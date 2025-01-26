@@ -1,3 +1,4 @@
+import 'package:domasna/components/back_button.dart';
 import 'package:domasna/components/profile_button.dart';
 import 'package:flutter/material.dart';
 
@@ -71,23 +72,9 @@ class ProfileEditScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.arrow_back, color: Colors.brown[300]),
-                label: const Text(
-                  'Go Back',
-                  style: TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.bold),
-                ),
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
+              CustomBackButton(
+                onTap: () => Navigator.pop(context),
+              )
             ],
           ),
         ),
