@@ -1,3 +1,4 @@
+import 'package:domasna/components/elevated_button.dart';
 import 'package:domasna/components/home_button.dart';
 import 'package:flutter/material.dart';
 import 'package:domasna/screens/sign_in_screen.dart';
@@ -42,7 +43,7 @@ class ChillSpotHome extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      HomeButton(
+                      CustomElevatedButton(
                         text: 'Sign Up',
                         onPressed: () {
                           Navigator.push(
@@ -51,9 +52,16 @@ class ChillSpotHome extends StatelessWidget {
                                 builder: (context) => SignUpScreen()),
                           );
                         },
+                        backgroundColor: const Color(0xFFDDA15E),
+                        foregroundColor: const Color(0xFFFEFAE0),
+                        fontSize: 18,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 40),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(8)),
                       ),
                       const SizedBox(height: 40),
-                      HomeButton(
+                      CustomElevatedButton(
                         text: 'Sign In',
                         onPressed: () {
                           Navigator.push(
@@ -62,6 +70,13 @@ class ChillSpotHome extends StatelessWidget {
                                 builder: (context) => SignInScreen()),
                           );
                         },
+                        backgroundColor: const Color(0xFFDDA15E),
+                        foregroundColor: const Color(0xFFFEFAE0),
+                        fontSize: 18,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 40),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(8)),
                       ),
                     ],
                   ),
