@@ -10,6 +10,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 58, 77, 37),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 50),
@@ -25,7 +26,6 @@ class ProfileScreen extends StatelessWidget {
             ),
             child: Stack(
               children: [
-                // Add a semi-transparent overlay to ensure text readability
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
@@ -83,7 +83,7 @@ class ProfileScreen extends StatelessWidget {
                         child: const LinearProgressIndicator(
                           value: 0.8,
                           backgroundColor: Colors.white,
-                          color: Colors.white,
+                          color: Color.fromARGB(255, 30, 46, 23),
                         ),
                       ),
                     ),
@@ -107,18 +107,17 @@ class ProfileScreen extends StatelessWidget {
                               Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                      builder: (context) => LeaderboardScreen())
-                              )
+                                      builder: (context) =>
+                                          LeaderboardScreen()))
                             },
                           ),
                           ProfileButton(
                             text: 'Badges',
                             onTap: () => {
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => BadgesScreen())
-                              )
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => BadgesScreen()))
                             },
                           ),
                           ProfileButton(
@@ -143,9 +142,9 @@ class ProfileScreen extends StatelessWidget {
                             text: 'My Reviews',
                             onTap: () => {
                               Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => ReviewScreen())
-                              )
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => ReviewScreen()))
                             },
                           ),
                         ],
@@ -160,12 +159,14 @@ class ProfileScreen extends StatelessWidget {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => ProfileEditScreen()),
+                                MaterialPageRoute(
+                                    builder: (context) => ProfileEditScreen()),
                               );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFFFFFFF),
-                              foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                              foregroundColor:
+                                  const Color.fromARGB(255, 0, 0, 0),
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -192,7 +193,8 @@ class ProfileScreen extends StatelessWidget {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFFFFFFF),
-                              foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                              foregroundColor:
+                                  const Color.fromARGB(255, 0, 0, 0),
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),

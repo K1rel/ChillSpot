@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:domasna/screens/sign_in_screen.dart';
 import 'package:domasna/screens/sign_up_screen.dart';
 
+import '../components/home_button.dart';
+
 class ChillSpotHome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,8 @@ class ChillSpotHome extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 30),
-                      ElevatedButton(
+                      HomeButton(
+                        text: 'Sign Up',
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -49,22 +52,10 @@ class ChillSpotHome extends StatelessWidget {
                                 builder: (context) => SignUpScreen()),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFDDA15E),
-                          foregroundColor: const Color(0xFFFEFAE0),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Sign Up',
-                          style: TextStyle(fontSize: 18),
-                        ),
                       ),
                       const SizedBox(height: 40),
-                      ElevatedButton(
+                      HomeButton(
+                        text: 'Sign In',
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -72,19 +63,6 @@ class ChillSpotHome extends StatelessWidget {
                                 builder: (context) => SignInScreen()),
                           );
                         },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFDDA15E),
-                          foregroundColor: const Color(0xFFFEFAE0),
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 12, horizontal: 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Sign In',
-                          style: TextStyle(fontSize: 18),
-                        ),
                       ),
                     ],
                   ),
