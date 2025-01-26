@@ -1,8 +1,7 @@
+import 'package:domasna/components/home_button.dart';
 import 'package:flutter/material.dart';
 import 'package:domasna/screens/sign_in_screen.dart';
 import 'package:domasna/screens/sign_up_screen.dart';
-
-import '../components/home_button.dart';
 
 class ChillSpotHome extends StatelessWidget {
   @override

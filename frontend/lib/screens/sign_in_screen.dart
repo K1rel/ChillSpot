@@ -1,7 +1,10 @@
+import 'package:domasna/components/custom_rich_text.dart';
+import 'package:domasna/components/elevated_button.dart';
 import 'package:domasna/screens/profile_screen.dart';
 import 'package:domasna/screens/sign_up_screen.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+
+import '../components/profile_input_field.dart';
 
 class SignInScreen extends StatelessWidget {
   @override
@@ -32,32 +35,9 @@ class SignInScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Username:',
-                      labelStyle: const TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.white24,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                  const InputField(label: 'Username:'),
                   const SizedBox(height: 15),
-                  TextField(
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password:',
-                      labelStyle: const TextStyle(color: Colors.white),
-                      filled: true,
-                      fillColor: Colors.white24,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                  const InputField(label: 'Password:', obscureText: true),
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
@@ -74,7 +54,8 @@ class SignInScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  ElevatedButton(
+                  CustomElevatedButton(
+                    text: 'Log In',
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -82,44 +63,17 @@ class SignInScreen extends StatelessWidget {
                             builder: (context) => ProfileScreen()),
                       );
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFDDA15E),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 15, horizontal: 50),
-                    ),
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
-                    ),
                   ),
                   const SizedBox(height: 10),
-                  RichText(
-                    text: TextSpan(
-                      text: "Don't have an account? ",
-                      style: const TextStyle(
-                        color: Colors.white,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'Sign Up',
-                          style: const TextStyle(
-                            color: Colors.lightBlueAccent,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()
-                            ..onTap = () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => SignUpScreen()),
-                              );
-                            },
-                        ),
-                      ],
-                    ),
+                  CustomRichText(
+                    text: "Don't have an account? ",
+                    actionText: 'Sign Up',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SignUpScreen()),
+                      );
+                    },
                   ),
                 ],
               ),
