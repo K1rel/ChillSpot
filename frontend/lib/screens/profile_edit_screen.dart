@@ -1,3 +1,4 @@
+import 'package:domasna/components/profile_button.dart';
 import 'package:flutter/material.dart';
 
 class ProfileEditScreen extends StatelessWidget {
@@ -5,7 +6,7 @@ class ProfileEditScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('images/background.png'),
             fit: BoxFit.cover,
@@ -17,20 +18,20 @@ class ProfileEditScreen extends StatelessWidget {
             children: [
               Card(
                 color: Colors.brown[600],
-                margin: EdgeInsets.symmetric(horizontal: 24),
+                margin: const EdgeInsets.symmetric(horizontal: 24),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildTextField('Email:', Icons.email),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       _buildTextField('Username:', Icons.person),
-                      SizedBox(height: 16),
-                      Row(
+                      const SizedBox(height: 16),
+                      const Row(
                         children: [
                           Text(
                             'Profile picture:',
@@ -38,65 +39,50 @@ class ProfileEditScreen extends StatelessWidget {
                           ),
                           SizedBox(width: 16),
                           CircleAvatar(
-                            radius: 40,
-                            backgroundImage: const AssetImage('images/profile.jpg')
-                          ),
+                              radius: 40,
+                              backgroundImage:
+                                  AssetImage('images/profile.jpg')),
                         ],
                       ),
-                      SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: () {},
-                        child: Text(
-                            'Confirm Edit',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                            ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          minimumSize: Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                      const SizedBox(height: 24),
+                      ProfileButton(
+                        text: 'Confirm Edit',
+                        onTap: () {},
+                        height: 48,
+                        borderRadius: 8,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                       ),
-                      SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () {},
-                        child: Text(
-                            'Change Password',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
+                      const SizedBox(height: 12),
+                      ProfileButton(
+                        text: 'Change Password',
+                        onTap: () {},
+                        height: 48,
+                        borderRadius: 8,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          minimumSize: Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
+                      )
                     ],
                   ),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextButton.icon(
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(Icons.arrow_back, color: Colors.brown[300]),
-                label: Text(
+                label: const Text(
                   'Go Back',
                   style: TextStyle(
-                      color: Colors.black,
-                    fontWeight: FontWeight.bold
-                  ),
+                      color: Colors.black, fontWeight: FontWeight.bold),
                 ),
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -115,9 +101,9 @@ class ProfileEditScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white),
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         TextField(
           decoration: InputDecoration(
             filled: true,

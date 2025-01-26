@@ -1,3 +1,4 @@
+import 'package:domasna/components/profile_button.dart';
 import 'package:domasna/screens/home_screen.dart';
 import 'package:domasna/screens/map_screen.dart';
 import 'package:domasna/screens/leaderboard_screen.dart';
@@ -215,38 +216,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ProfileButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-
-  const ProfileButton({required this.text, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFFFFFF),
-          foregroundColor: const Color.fromARGB(255, 0, 0, 0),
-          minimumSize: const Size(double.infinity, 50),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
           ),
         ),
       ),
