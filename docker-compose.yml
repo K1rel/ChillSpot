@@ -14,6 +14,15 @@ services:
     networks:
       - chillspot-net
 
+backend:
+  build: ./backend
+  depends_on:
+    - postgres
+  networks:
+    - chilspot-net
+  ports:
+    - "8080:8080" #nemora da znachi mozhe da go smenime
+
 volumes:
   postgres_data:
 
