@@ -1,0 +1,22 @@
+package main
+
+import (
+    "log"
+    "os/exec"
+)
+
+func runMigrations() {
+    cmd := exec.Command("migrate", "-path", "migrations", "-database", "postgres://admin:secret@postgres:5432/chillspot?sslmode=disable", "up")
+    output, err := cmd.CombinedOutput()
+    if err != nil {
+        log.Fatalf("Migration failed: %s\n%s", err, output)
+    }
+    log.Println("Migration successful")
+}
+
+func main() {
+    runMigrations()
+    // Start your API server...
+}
+
+// ovie metodi se za koga kje se startuva aplikacijata da se izvrshat migraciite
