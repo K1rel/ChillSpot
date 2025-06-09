@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"gorm.io/gorm"
 )
 
@@ -18,8 +17,10 @@ const (
 )
 
 type Spot struct {
-	ID                 uuid.UUID        `gorm:"type:uuid;default:gen_random();primaryKey"`
-	Location           pgtype.Point     `gorm:"type:geometry(Point, 4326); not null"`
+	ID                 uuid.UUID        `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	Latitude           float64          `gorm:"type:double precision;not null"`
+	Longitude          float64          `gorm:"type:double precision;not null"`
+	Title              string           `gorm:"type:varchar(100);not null"`
 	Description        string           `gorm:"type:text;not null"`
 	DayImage           *string          `gorm:"type:text"`
 	NightImage         *string          `gorm:"type:text"`
