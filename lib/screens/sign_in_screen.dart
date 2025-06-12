@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:domasna/components/custom_rich_text.dart';
 import 'package:domasna/components/elevated_button.dart';
 import 'package:domasna/screens/profile_screen.dart';
 import 'package:domasna/screens/sign_up_screen.dart';
 import 'package:domasna/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../components/profile_input_field.dart';
 
@@ -30,6 +33,11 @@ class _SignInScreenState extends State<SignInScreen> {
     final response = await AuthService.login(username, password);
 
     if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      final userId = responseData['userId']; 
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', userId);
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => ProfileScreen()),

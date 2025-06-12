@@ -12,6 +12,7 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 
 	r.HandleFunc("/register", handlers.Register(db)).Methods("POST")
 	r.HandleFunc("/login", handlers.Login(db)).Methods("POST")
+	r.HandleFunc("/spots", handlers.AddSpotHandler(db)).Methods("POST")
 
 	return r
 }
