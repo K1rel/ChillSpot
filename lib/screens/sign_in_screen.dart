@@ -2,11 +2,45 @@ import 'package:domasna/components/custom_rich_text.dart';
 import 'package:domasna/components/elevated_button.dart';
 import 'package:domasna/screens/profile_screen.dart';
 import 'package:domasna/screens/sign_up_screen.dart';
+import 'package:domasna/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 import '../components/profile_input_field.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
+  @override
+  _SignInScreenState createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    final response = await AuthService.login(username, password);
+
+    if (response.statusCode == 200) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => ProfileScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: ${response.body}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,9 +69,9 @@ class SignInScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const InputField(label: 'Username:'),
+                  InputField(label: 'Username:', controller: _usernameController),
                   const SizedBox(height: 15),
-                  const InputField(label: 'Password:', obscureText: true),
+                  InputField(label: 'Password:', controller: _passwordController, obscureText: true),
                   const SizedBox(height: 10),
                   Align(
                     alignment: Alignment.centerRight,
@@ -56,13 +90,7 @@ class SignInScreen extends StatelessWidget {
                   const SizedBox(height: 40),
                   CustomElevatedButton(
                     text: 'Log In',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ProfileScreen()),
-                      );
-                    },
+                    onPressed: _handleLogin,
                   ),
                   const SizedBox(height: 10),
                   CustomRichText(

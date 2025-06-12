@@ -2,11 +2,35 @@ import 'package:domasna/components/custom_rich_text.dart';
 import 'package:domasna/components/elevated_button.dart';
 import 'package:domasna/screens/profile_screen.dart';
 import 'package:domasna/screens/sign_in_screen.dart';
+import 'package:domasna/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 import '../components/profile_input_field.dart';
 
-class SignUpScreen extends StatelessWidget {
+
+class SignUpScreen extends StatefulWidget{
+
+  @override 
+  _SignUpScreenState createState() => _SignUpScreenState();
+
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+    @override
+  void dispose() {
+    _emailController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,23 +59,48 @@ class SignUpScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const InputField(label: 'Email:'),
+                   InputField(label: 'Email:', controller: _emailController),
                   const SizedBox(height: 15),
-                  const InputField(label: 'Username:'),
+                   InputField(label: 'Username:', controller: _usernameController),
                   const SizedBox(height: 15),
-                  const InputField(label: 'Password:', obscureText: true),
+                   InputField(label: 'Password:',controller: _passwordController , obscureText: true),
                   const SizedBox(height: 15),
-                  const InputField(
-                      label: 'Confirm password:', obscureText: true),
+                   InputField(
+                      label: 'Confirm password:', controller: _confirmPasswordController , obscureText: true),
                   const SizedBox(height: 70),
                   CustomElevatedButton(
                     text: 'Sign Up',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => ProfileScreen()),
-                      );
+                    onPressed: () async {
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //       builder: (context) => ProfileScreen()),
+                      
+                     final email = _emailController.text.trim();
+                      final username = _usernameController.text.trim();
+                      final password = _passwordController.text.trim();
+                      final confirmPassword = _confirmPasswordController.text.trim();
+
+                      if (password != confirmPassword) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Passwords do not match")),
+                        );
+                        return;
+                      }
+
+                      final response = await AuthService.register(email, username, password);
+                      if (response.statusCode == 201) {
+                        print('User created');
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ProfileScreen()),
+                        );
+                      } else {
+                        print('Error: ${response.body}');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: ${response.body}")),
+                        );
+                      }
                     },
                   ),
                   const SizedBox(height: 10),

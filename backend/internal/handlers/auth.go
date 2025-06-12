@@ -10,6 +10,7 @@ import (
 )
 
 type RegisterInput struct {
+	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -29,6 +30,7 @@ func Register(db *gorm.DB) http.HandlerFunc {
 		}
 
 		user := models.User{
+			Email:    input.Email,
 			Username: input.Username,
 			Password: string(hashedPassword),
 		}
