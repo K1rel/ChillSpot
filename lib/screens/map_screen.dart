@@ -100,43 +100,52 @@ void _addMarker(LatLng point) {
             markers.add(
               Marker(
                 point: point,
-                width: 50,
-                height: 50,
-                child:Column(
-                  children:[
-                 GestureDetector(
-                  onTap: () {
-                    if (controller.currentLocation != null) {
-                      controller.calculateRoute(controller.currentLocation!, point);
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Enable location to calculate route'),
-                          backgroundColor: Colors.red,
+                width: 100,
+                height: 80,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        if (controller.currentLocation != null) {
+                          controller.calculateRoute(controller.currentLocation!, point);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Enable location to calculate route'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
+                    ),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: 40,
+                        maxWidth: 100,
+                      ),
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(5),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black26, blurRadius: 2),
+                          ],
                         ),
-                      );
-                    }
-                  },
-                  child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
-                ),
-                 Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(5),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black26, blurRadius: 2),
-                            ],
-                          ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
                           child: Text(
-                            // placeName,
-                            
-                            "Insert place name here",
+                            placeDetails['name'], // <-- dynamic name from saved place
                             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                           ),
                         ),
-                ]
-              ),)
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             );
           });
         },
@@ -144,6 +153,7 @@ void _addMarker(LatLng point) {
     ),
   );
 }
+
 
   
   @override
