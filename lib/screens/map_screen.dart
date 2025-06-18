@@ -1,10 +1,12 @@
-// lib/screens/map_screen.dart
 import 'package:domasna/screens/place_detail_screen.dart';
 import 'package:domasna/services/spot_service.dart';
+import 'package:domasna/services/visited_spot_service.dart';
+import 'package:domasna/widgets/arrival_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 import '../controllers/map_controller.dart';
 
 class MapScreen extends StatefulWidget {
@@ -22,16 +24,19 @@ class _MapScreenState extends State<MapScreen> {
   List<Marker> savedMarkers = [];  
   List<Marker> controllerMarkers = [];
   
+  // Location tracking for arrival detection
+  Timer? _locationCheckTimer;
+  LatLng? _lastKnownLocation;
+  Set<String> _shownPopups = {}; // Track which popups we've already shown
   
   @override
   void initState() {
     super.initState();
     
-    
     controller.markersStream.listen((updatedMarkers) {
       setState(() {
         markers = updatedMarkers;
-         controllerMarkers = updatedMarkers;
+        controllerMarkers = updatedMarkers;
       });
     });
     
@@ -54,14 +59,13 @@ class _MapScreenState extends State<MapScreen> {
     });
     
     controller.boundingBoxStream.listen((bounds) {
-  
-  controller.mapController.fitCamera(
-    CameraFit.bounds(
-      bounds: bounds,
-      padding: const EdgeInsets.all(50.0),
-    ),
-  );
-});
+      controller.mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(50.0),
+        ),
+      );
+    });
     
     controller.errorStream.listen((error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -81,151 +85,164 @@ class _MapScreenState extends State<MapScreen> {
       );
     });
     
+    // Listen to location updates for arrival detection
+    controller.currentLocationStream.listen((location) {
+      if (location != null) {
+        _lastKnownLocation = location;
+        _checkForNearbySpots(location);
+      }
+    });
+
+    // Listen to visited spots updates from controller
+    controller.visitedSpotsStream.listen((visitedMarkers) {
+      setState(() {
+        controller.visitedMarkers = visitedMarkers;
+      });
+    });
     
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       controller.getCurrentLocation();
-       await _loadSavedSpots(); 
+      await _loadSavedSpots();
+      controller.loadVisitedSpots(); // Use controller's method
+      _startLocationTracking();
     });
   }
+  
+  void _startLocationTracking() {
+    // Check for nearby spots every 30 seconds
+    _locationCheckTimer = Timer.periodic(Duration(seconds: 30), (_) {
+      if (_lastKnownLocation != null) {
+        _checkForNearbySpots(_lastKnownLocation!);
+      }
+    });
+  }
+
+ Future<void> _checkForNearbySpots(LatLng currentLocation) async {
+  print('[PROXIMITY] Checking at: ${currentLocation.latitude}, ${currentLocation.longitude}');
+  
+  try {
+    final nearbySpots = await VisitedSpotService.checkProximity(
+      latitude: currentLocation.latitude,
+      longitude: currentLocation.longitude,
+    );
+    
+    print('[PROXIMITY] Found ${nearbySpots.length} nearby spots');
+    
+    for (final spot in nearbySpots) {
+      print('[PROXIMITY] Nearby spot: ${spot.title} (${spot.distance}m)');
+      
+      if (!_shownPopups.contains(spot.spotId)) {
+        print('[PROXIMITY] Showing popup for: ${spot.title}');
+        _shownPopups.add(spot.spotId);
+        _showArrivalPopup(spot);
+        break;
+      }
+    }
+  } catch (e) {
+    print('[PROXIMITY] Error: $e');
+  }
+}
+  
+  void _showArrivalPopup(NearbySpot nearbySpot) {
+  showArrivalPopup(
+    context,
+    nearbySpot,
+    () {
+      // After marking as visited, reset the shown state
+      _shownPopups.remove(nearbySpot.spotId);
+      controller.loadVisitedSpots();
+    },
+  );
+}
   
   @override
   void dispose() {
     controller.dispose();
     searchController.dispose();
+    _locationCheckTimer?.cancel();
     super.dispose();
   }
 
-Future<void> _loadSavedSpots() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
-  if (token == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please login to view saved spots')),
-    );
-    return;
-  }
+  Future<void> _loadSavedSpots() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to view saved spots')),
+      );
+      return;
+    }
 
-  try {
-    final spots = await SpotService.getSpotsByUserId();
-    setState(() {
-      savedMarkers = spots.map((spot) {
-        return Marker(
-          point: LatLng(spot['Latitude'], spot['Longitude']),
-          width: 100,
-          height: 80,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                onTap: () {
-                  if (controller.currentLocation != null) {
-                    controller.calculateRoute(
-                      controller.currentLocation!,
-                      LatLng(spot['Latitude'], spot['Longitude'])
-                    );
-                  }
-                },
-                child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
-              ),
-              ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: 40, maxWidth: 100),
-                child: Container(
-                  padding: EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(5),
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      spot['Title'] ?? 'Saved Spot',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+    try {
+      final spots = await SpotService.getSpotsByUserId();
+      setState(() {
+        savedMarkers = spots.map((spot) {
+          return Marker(
+            point: LatLng(spot['Latitude'], spot['Longitude']),
+            width: 100,
+            height: 80,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (controller.currentLocation != null) {
+                      controller.calculateRoute(
+                        controller.currentLocation!,
+                        LatLng(spot['Latitude'], spot['Longitude'])
+                      );
+                    }
+                  },
+                  child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
+                ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: 40, maxWidth: 100),
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        spot['Title'] ?? 'Saved Spot',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        );
-      }).toList();
-    });
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to load saved spots: $e')),
-    );
+              ],
+            ),
+          );
+        }).toList();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load saved spots: $e')),
+      );
+    }
   }
-}
 
-void _addMarker(LatLng point) {
+  void _addMarker(LatLng point) {
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => PlaceDetailScreen(
         location: point,
         onSave: (placeDetails) async {  
-          // setState(() {
-          //   markers.add(
-          //     Marker(
-          //       point: point,
-          //       width: 100,
-          //       height: 80,
-          //       child: Column(
-          //         mainAxisSize: MainAxisSize.min,
-          //         children: [
-          //           GestureDetector(
-          //             onTap: () {
-          //               if (controller.currentLocation != null) {
-          //                 controller.calculateRoute(controller.currentLocation!, point);
-          //               } else {
-          //                 ScaffoldMessenger.of(context).showSnackBar(
-          //                   SnackBar(
-          //                     content: Text('Enable location to calculate route'),
-          //                     backgroundColor: Colors.red,
-          //                   ),
-          //                 );
-          //               }
-          //             },
-          //             child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
-          //           ),
-          //           ConstrainedBox(
-          //             constraints: BoxConstraints(
-          //               maxHeight: 40,
-          //               maxWidth: 100,
-          //             ),
-          //             child: Container(
-          //               padding: EdgeInsets.all(4),
-          //               decoration: BoxDecoration(
-          //                 color: Colors.white,
-          //                 borderRadius: BorderRadius.circular(5),
-          //                 boxShadow: [
-          //                   BoxShadow(color: Colors.black26, blurRadius: 2),
-          //                 ],
-          //               ),
-          //               child: FittedBox(
-          //                 fit: BoxFit.scaleDown,
-          //                 child: Text(
-          //                   placeDetails['name'], // <-- dynamic name from saved place
-          //                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-          //                 ),
-          //               ),
-          //             ),
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   );
-
-          // });
-
           await _loadSavedSpots();
+          
+          // Trigger immediate proximity check after saving
+          if (controller.currentLocation != null) {
+            _checkForNearbySpots(controller.currentLocation!);
+          }
         },
       ),
     ),
   );
 }
-
-
   
   @override
   Widget build(BuildContext context) {
@@ -238,16 +255,14 @@ void _addMarker(LatLng point) {
               initialCenter: const LatLng(41.9981, 21.4254),
               initialZoom: 13.0,
               onTap: (tapPosition, point) {
-      _addMarker(point);
-    },
+                _addMarker(point);
+              },
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                urlTemplate: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 subdomains: ['a', 'b', 'c'],
               ),
-              
               PolylineLayer(
                 polylines: [
                   if (routePoints.isNotEmpty)
@@ -260,6 +275,7 @@ void _addMarker(LatLng point) {
               ),
               MarkerLayer(markers: [
                 ...savedMarkers,
+                ...controller.visitedMarkers, // Use controller's visited markers
                 ...controllerMarkers,
               ]),
             ],
@@ -335,6 +351,46 @@ void _addMarker(LatLng point) {
               ],
             ),
           ),
+          // Legend for different marker types
+          Positioned(
+            top: 100,
+            left: 20,
+            child: Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 16),
+                      SizedBox(width: 5),
+                      Text('Saved Spots', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green, size: 16),
+                      SizedBox(width: 5),
+                      Text('Visited', style: TextStyle(fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
           // Back button
           Positioned(
             bottom: 20,
@@ -395,10 +451,33 @@ void _addMarker(LatLng point) {
               ),
             ),
           ),
+          // Refresh visited spots button
+          Positioned(
+            bottom: 100,
+            right: 20,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF606C38),
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.refresh),
+                color: Colors.white,
+                onPressed: () {
+                  controller.loadVisitedSpots();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Refreshed visited spots')),
+                  );
+                },
+              ),
+            ),
+          ),
           // Loading indicator for route calculation
           if (isLoadingRoute)
             Positioned(
-              bottom: 90,
+              bottom: 180,
               right: 20,
               child: Container(
                 padding: EdgeInsets.all(10),
@@ -432,7 +511,7 @@ void _addMarker(LatLng point) {
           // Route legend - shows when a route is active
           if (routePoints.isNotEmpty)
             Positioned(
-              top: 100,
+              top: 170,
               right: 20,
               child: Container(
                 padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -475,5 +554,3 @@ void _addMarker(LatLng point) {
     );
   }
 }
-
-

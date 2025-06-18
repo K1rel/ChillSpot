@@ -20,8 +20,17 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 
 	protected.HandleFunc("/profile", handlers.GetProfile(db)).Methods("GET")
 	protected.HandleFunc("/profile", handlers.UpdateProfile(db)).Methods("PUT")
+
+	// Spot management
 	protected.HandleFunc("/spots", handlers.AddSpotHandler(db)).Methods("POST")
 	protected.HandleFunc("/spots/user", handlers.GetSpotsByUserHandler(db)).Methods("GET")
+
+	// Visited spots endpoints
+	protected.HandleFunc("/visited-spots", handlers.AddVisitedSpotHandler(db)).Methods("POST")
+	protected.HandleFunc("/visited-spots", handlers.GetVisitedSpotsHandler(db)).Methods("GET")
+
+	// Proximity check endpoint
+	protected.HandleFunc("/spots/check-proximity", handlers.CheckProximityHandler(db)).Methods("POST")
 
 	return r
 }
