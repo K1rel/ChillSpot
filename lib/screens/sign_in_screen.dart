@@ -26,28 +26,30 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  Future<void> _handleLogin() async {
-    final username = _usernameController.text.trim();
-    final password = _passwordController.text.trim();
+ Future<void> _handleLogin() async {
+  final username = _usernameController.text.trim();
+  final password = _passwordController.text.trim();
 
-    final response = await AuthService.login(username, password);
+  try {
+    // AuthService.login now returns a Map directly, not an http.Response
+    final responseData = await AuthService.login(username, password);
+    
+    // No need to decode again - responseData is already a Map
+    final userId = responseData['user_id'];
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      final userId = responseData['userId']; 
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_id', userId);
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ProfileScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed: ${response.body}')),
-      );
-    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_id', userId);
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProfileScreen()),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Login failed: $e')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

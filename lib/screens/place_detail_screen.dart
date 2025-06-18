@@ -45,42 +45,34 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   }
 
  void _savePlace() async {
-
   final prefs = await SharedPreferences.getInstance();
-  final userId = prefs.getString('user_id');
-
-   if (userId == null) {
+  final token = prefs.getString('token');
+  if (token == null) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('User not logged in')),
+      const SnackBar(content: Text('Please login to save spots')),
     );
     return;
   }
 
-  final placeDetails = {
-    'name': _nameController.text,
-    'altitude': double.tryParse(_altitudeController.text) ?? 0.0,
-    'difficulty': _selectedDifficulty,
-    'weather': _selectedWeather,
-  };
-
   try {
-    // Save to backend
     await SpotService.saveSpotToServer(
       lat: widget.location.latitude,
       lng: widget.location.longitude,
       title: _nameController.text,
-      desc: "Added from app", // You can improve UI for this later
+      desc: "Added from app",
       weather: _selectedWeather,
-      userId: userId, // Replace with actual user ID from state/auth
+     
     );
 
-    // Trigger any local save/callback logic
-    widget.onSave(placeDetails);
+    widget.onSave({
+      'name': _nameController.text,
+      'altitude': double.tryParse(_altitudeController.text) ?? 0.0,
+      'difficulty': _selectedDifficulty,
+      'weather': _selectedWeather,
+    });
 
-    // Go back
     Navigator.pop(context);
   } catch (e) {
-    // Optionally show an error message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Failed to save place: $e')),
     );

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ProfileButton extends StatelessWidget {
   final String text;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color? backgroundColor;
   final Color? foregroundColor;
   final double? height;
@@ -12,7 +12,7 @@ class ProfileButton extends StatelessWidget {
   const ProfileButton({
     Key? key,
     required this.text,
-    required this.onTap,
+     this.onTap,
     this.backgroundColor = Colors.white,
     this.foregroundColor = Colors.black,
     this.height = 50,

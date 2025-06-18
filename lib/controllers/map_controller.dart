@@ -57,10 +57,20 @@ class MapSearchController {
   }
   
   void clearMarkers() {
-    markers.clear();
-    routePoints.clear();
-    _markersController.add(markers);
-    _routeController.add(routePoints);
+  
+  markers.removeWhere((marker) {
+   
+    if (marker.child is Column) {
+      final column = marker.child as Column;
+      return column.children.length != 2 || 
+             column.children[1] is! ConstrainedBox;
+    }
+    return true; 
+  });
+  
+  routePoints.clear();
+  _markersController.add(markers);
+  _routeController.add(routePoints);
   }
   
   Future<void> searchLocation(String query) async {
@@ -186,29 +196,26 @@ class MapSearchController {
   }
 
   Future<void> getCurrentLocation() async {
-    final hasPermission = await _handleLocationPermission();
-    
+     final hasPermission = await _handleLocationPermission();
     if (!hasPermission) return;
+  
+  try {
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
     
-    try {
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      
-      currentLocation = LatLng(position.latitude, position.longitude);
-      _currentLocationController.add(currentLocation);
-      
-     
-      _updateUserLocationMarker();
-      
-     
-      mapController.move(currentLocation!, 15.0);
-      
-     
-      _startLocationUpdates();
-    } catch (e) {
-      _errorController.add('Error getting current location: $e');
-    }
+    currentLocation = LatLng(position.latitude, position.longitude);
+    _currentLocationController.add(currentLocation);
+    
+    _updateUserLocationMarker();
+    
+  
+    mapController.move(currentLocation!, 15.0);
+    
+    _startLocationUpdates();
+  } catch (e) {
+    _errorController.add('Error getting current location: $e');
+  }
   }
   
   void _startLocationUpdates() {
@@ -236,30 +243,33 @@ class MapSearchController {
     if (currentLocation == null) return;
     
     
-    markers.removeWhere((marker) => marker.point == currentLocation);
-    
-   
-    markers.add(
-      Marker(
-        point: currentLocation!,
-        width: 60,
-        height: 60,
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.blue.withAlpha((0.3 * 255).toInt()),
-          ),
-          child: const Icon(
-            Icons.my_location,
-            color: Colors.blue,
-            size: 30,
-          ),
+    // Create a new list instead of modifying the existing one
+  final newMarkers = [...markers.where((m) => m.point != currentLocation)];
+  
+  // Add current location marker
+  newMarkers.add(
+    Marker(
+      point: currentLocation!,
+      width: 60,
+      height: 60,
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.blue.withAlpha((0.3 * 255).toInt()),
+        ),
+        child: const Icon(
+          Icons.my_location,
+          color: Colors.blue,
+          size: 30,
         ),
       ),
-    );
-    
+    ),
+  );
   
-    _markersController.add(markers);
+  // Update markers with the new list
+  markers.clear();
+  markers.addAll(newMarkers);
+  _markersController.add(markers);
   }
   
   Future<void> calculateRoute(LatLng start, LatLng end) async {

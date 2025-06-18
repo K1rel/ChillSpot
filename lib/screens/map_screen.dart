@@ -1,8 +1,10 @@
 // lib/screens/map_screen.dart
 import 'package:domasna/screens/place_detail_screen.dart';
+import 'package:domasna/services/spot_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/map_controller.dart';
 
 class MapScreen extends StatefulWidget {
@@ -17,7 +19,8 @@ class _MapScreenState extends State<MapScreen> {
   List<LatLng> routePoints = [];
   bool isSearching = false;
   bool isLoadingRoute = false;
-  
+  List<Marker> savedMarkers = [];  
+  List<Marker> controllerMarkers = [];
   
   
   @override
@@ -28,6 +31,7 @@ class _MapScreenState extends State<MapScreen> {
     controller.markersStream.listen((updatedMarkers) {
       setState(() {
         markers = updatedMarkers;
+         controllerMarkers = updatedMarkers;
       });
     });
     
@@ -78,8 +82,9 @@ class _MapScreenState extends State<MapScreen> {
     });
     
     
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       controller.getCurrentLocation();
+       await _loadSavedSpots(); 
     });
   }
   
@@ -89,65 +94,131 @@ class _MapScreenState extends State<MapScreen> {
     searchController.dispose();
     super.dispose();
   }
+
+Future<void> _loadSavedSpots() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('token');
+  if (token == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please login to view saved spots')),
+    );
+    return;
+  }
+
+  try {
+    final spots = await SpotService.getSpotsByUserId();
+    setState(() {
+      savedMarkers = spots.map((spot) {
+        return Marker(
+          point: LatLng(spot['Latitude'], spot['Longitude']),
+          width: 100,
+          height: 80,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GestureDetector(
+                onTap: () {
+                  if (controller.currentLocation != null) {
+                    controller.calculateRoute(
+                      controller.currentLocation!,
+                      LatLng(spot['Latitude'], spot['Longitude'])
+                    );
+                  }
+                },
+                child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: 40, maxWidth: 100),
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(5),
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      spot['Title'] ?? 'Saved Spot',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList();
+    });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to load saved spots: $e')),
+    );
+  }
+}
+
 void _addMarker(LatLng point) {
   Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => PlaceDetailScreen(
         location: point,
-        onSave: (placeDetails) {
-          setState(() {
-            markers.add(
-              Marker(
-                point: point,
-                width: 100,
-                height: 80,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        if (controller.currentLocation != null) {
-                          controller.calculateRoute(controller.currentLocation!, point);
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Enable location to calculate route'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
-                    ),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: 40,
-                        maxWidth: 100,
-                      ),
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(5),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black26, blurRadius: 2),
-                          ],
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            placeDetails['name'], // <-- dynamic name from saved place
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          });
+        onSave: (placeDetails) async {  
+          // setState(() {
+          //   markers.add(
+          //     Marker(
+          //       point: point,
+          //       width: 100,
+          //       height: 80,
+          //       child: Column(
+          //         mainAxisSize: MainAxisSize.min,
+          //         children: [
+          //           GestureDetector(
+          //             onTap: () {
+          //               if (controller.currentLocation != null) {
+          //                 controller.calculateRoute(controller.currentLocation!, point);
+          //               } else {
+          //                 ScaffoldMessenger.of(context).showSnackBar(
+          //                   SnackBar(
+          //                     content: Text('Enable location to calculate route'),
+          //                     backgroundColor: Colors.red,
+          //                   ),
+          //                 );
+          //               }
+          //             },
+          //             child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
+          //           ),
+          //           ConstrainedBox(
+          //             constraints: BoxConstraints(
+          //               maxHeight: 40,
+          //               maxWidth: 100,
+          //             ),
+          //             child: Container(
+          //               padding: EdgeInsets.all(4),
+          //               decoration: BoxDecoration(
+          //                 color: Colors.white,
+          //                 borderRadius: BorderRadius.circular(5),
+          //                 boxShadow: [
+          //                   BoxShadow(color: Colors.black26, blurRadius: 2),
+          //                 ],
+          //               ),
+          //               child: FittedBox(
+          //                 fit: BoxFit.scaleDown,
+          //                 child: Text(
+          //                   placeDetails['name'], // <-- dynamic name from saved place
+          //                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+          //                 ),
+          //               ),
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //     ),
+          //   );
+
+          // });
+
+          await _loadSavedSpots();
         },
       ),
     ),
@@ -187,7 +258,10 @@ void _addMarker(LatLng point) {
                     ),
                 ],
               ),
-              MarkerLayer(markers: markers),
+              MarkerLayer(markers: [
+                ...savedMarkers,
+                ...controllerMarkers,
+              ]),
             ],
           ),
           // Search bar
