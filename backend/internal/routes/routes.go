@@ -32,5 +32,25 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 	// Proximity check endpoint
 	protected.HandleFunc("/spots/check-proximity", handlers.CheckProximityHandler(db)).Methods("POST")
 
+	//Review endpoints
+	protected.HandleFunc("/reviews", handlers.CreateReviewHandler(db)).Methods("POST")
+	protected.HandleFunc("/reviews/user", handlers.GetUserReviewsHandler(db)).Methods("GET")
+
+	protected.HandleFunc("/spots/{id}", handlers.GetSpotHandler(db)).Methods("GET")
+	protected.HandleFunc("/spots/{id}/like", handlers.LikeSpotHandler(db)).Methods("POST")
+	protected.HandleFunc("/spots/{id}/visit", handlers.TrackVisitHandler(db)).Methods("POST")
+
+	// Review routes
+	protected.HandleFunc("/reviews/spot/{spotId}", handlers.GetSpotReviewsHandler(db)).Methods("GET")
+
+	//Friend routes
+	// Friend routes
+	protected.HandleFunc("/friends/search", handlers.SearchUsersHandler(db)).Methods("POST")
+	protected.HandleFunc("/friends/request", handlers.SendFriendRequestHandler(db)).Methods("POST")
+	protected.HandleFunc("/friends/requests", handlers.GetFriendRequestsHandler(db)).Methods("GET")
+	protected.HandleFunc("/friends/accept", handlers.AcceptFriendRequestHandler(db)).Methods("POST")
+	protected.HandleFunc("/friends/decline", handlers.DeclineFriendRequestHandler(db)).Methods("POST")
+	protected.HandleFunc("/friends", handlers.GetFriendsHandler(db)).Methods("GET")
+
 	return r
 }

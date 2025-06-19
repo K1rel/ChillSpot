@@ -1,10 +1,12 @@
     import 'package:domasna/components/profile_button.dart';
+import 'package:domasna/screens/added_spots_screen.dart';
     import 'package:domasna/screens/home_screen.dart';
     import 'package:domasna/screens/map_screen.dart';
     import 'package:domasna/screens/leaderboard_screen.dart';
     import 'package:domasna/screens/profile_edit_screen.dart';
     import 'package:domasna/screens/badges_screen.dart';
     import 'package:domasna/screens/review_screen.dart';
+import 'package:domasna/screens/visited_spots_screen.dart';
     import 'package:flutter/material.dart';
     import 'package:domasna/services/auth_service.dart'; // Add this import
     import 'package:shared_preferences/shared_preferences.dart'; // Add this import
@@ -168,18 +170,20 @@
                                         ProfileButton(
                                           text: 'Added spots',
                                           onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreen()),
-                                          ),
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => AddedSpotsScreen(), // Changed to AddedSpotsScreen
+                                              ),
+                                            ),
                                         ),
                                         ProfileButton(
                                           text: 'Visited Spots',
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) => MapScreen()),
-                                          ),
+                                         onTap: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => VisitedSpotsScreen(), // Changed to VisitedSpotsScreen
+                                              ),
+                                            ),
                                         ),
                                         ProfileButton(
                                           text: 'My Reviews',

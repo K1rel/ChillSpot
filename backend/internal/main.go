@@ -26,6 +26,8 @@ func main() {
 		&models.Review{},
 		&models.Badge{},
 		&models.VisitedSpot{},
+		&models.Like{},
+		&models.FriendRequest{},
 	)
 	if err != nil {
 		log.Fatal("Migration failed:", err)

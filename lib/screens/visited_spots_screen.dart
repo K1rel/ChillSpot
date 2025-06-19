@@ -1,7 +1,10 @@
+// visited_spots_screen.dart
+import 'package:domasna/screens/spot_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:domasna/services/visited_spot_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
+import 'create_review_screen.dart'; // Add this import
 
 class VisitedSpotsScreen extends StatefulWidget {
   @override
@@ -45,6 +48,12 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
       appBar: AppBar(
         title: Text('Visited Spots'),
         backgroundColor: const Color(0xFF162927),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: _loadVisitedSpots,
+          ),
+        ],
       ),
       backgroundColor: const Color(0xFF162927),
       body: _isLoading
@@ -81,6 +90,14 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
                                 fontSize: 18,
                               ),
                             ),
+                            onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString()),
+                                      ),
+                                    );
+                                  },
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -102,12 +119,34 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => CreateReviewScreen(
+                                          spotId: spot['ID'].toString(),
+                                          spotTitle: spot['Title'] ?? 'Untitled Spot',
+                                        ),
+                                      ),
+                                    ).then((refresh) {
+                                      if (refresh == true) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Review submitted successfully!')),
+                                        );
+                                      }
+                                    });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Color(0xFFDDA15E),
+                                    foregroundColor: Colors.black,
+                                    minimumSize: Size(0, 36),
+                                  ),
+                                  child: Text('Leave Review'),
+                                ),
                               ],
                             ),
-                            trailing: Icon(Icons.chevron_right, color: Colors.white),
-                            onTap: () {
-                              // Implement visited spot detail view if needed
-                            },
                           ),
                         );
                       },

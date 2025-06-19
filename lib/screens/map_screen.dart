@@ -1,4 +1,5 @@
 import 'package:domasna/screens/place_detail_screen.dart';
+import 'package:domasna/screens/spot_detail_screen.dart';
 import 'package:domasna/services/spot_service.dart';
 import 'package:domasna/services/visited_spot_service.dart';
 import 'package:domasna/widgets/arrival_popup.dart';
@@ -185,14 +186,24 @@ class _MapScreenState extends State<MapScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 GestureDetector(
-                  onTap: () {
-                    if (controller.currentLocation != null) {
-                      controller.calculateRoute(
-                        controller.currentLocation!,
-                        LatLng(spot['Latitude'], spot['Longitude'])
-                      );
-                    }
-                  },
+                   onTap: () {
+                  // Keep the route calculation on tap
+                  if (controller.currentLocation != null) {
+                    controller.calculateRoute(
+                      controller.currentLocation!,
+                      LatLng(spot['Latitude'], spot['Longitude'])
+                    );
+                  }
+                },
+                onLongPress: () {
+                  // Add spot details on long press
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString()),
+                    ),
+                  );
+                },
                   child: Icon(Icons.location_on, color: Color(0xFFDDA15E), size: 40),
                 ),
                 ConstrainedBox(
