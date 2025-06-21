@@ -1,23 +1,44 @@
 import 'package:domasna/components/back_button.dart';
 import 'package:domasna/screens/add_friend_screen.dart';
 import 'package:domasna/screens/friend_request_screen.dart';
+import 'package:domasna/services/friend_service.dart';
 import 'package:flutter/material.dart';
 
-class LeaderboardScreen extends StatelessWidget {
-  final List<LeaderboardEntry> entries = [
-    LeaderboardEntry('Alice Wanderlust', 12345),
-    LeaderboardEntry('Bob Trailblazer', 11980),
-    LeaderboardEntry('Chloe Hiker', 10700),
-    LeaderboardEntry('David Adventure', 9850),
-    LeaderboardEntry('Ella Explorer', 8920),
-    LeaderboardEntry('Finn Pathfinder', 8450),
-    LeaderboardEntry('Grace Mountaineer', 7800),
-    LeaderboardEntry('Henry Seeker', 7520),
-    LeaderboardEntry('Isla Outbound', 6890),
-    LeaderboardEntry('Jack Rover', 6450),
-  ];
+class LeaderboardScreen extends StatefulWidget {
+  const LeaderboardScreen({Key? key}) : super(key: key);
 
-  LeaderboardScreen({Key? key}) : super(key: key);
+  @override
+  _LeaderboardScreenState createState() => _LeaderboardScreenState();
+}
+
+class _LeaderboardScreenState extends State<LeaderboardScreen> {
+  List<Map<String, dynamic>> friends = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFriends();
+  }
+
+  void _loadFriends() async {
+    setState(() => isLoading = true);
+    try {
+      final friendsList = await FriendService.getFriends();
+      setState(() {
+        friends = friendsList;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load friends: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,66 +132,105 @@ class LeaderboardScreen extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: entries.length,
-                    itemBuilder: (context, index) {
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        elevation: 4,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : friends.isEmpty
+                          ? const Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    alignment: Alignment.center,
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Color(0xFFFEFAE0),
-                                    ),
-                                    child: Text(
-                                      '${index + 1}',
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
+                                  Icon(
+                                    Icons.people_outline,
+                                    size: 64,
+                                    color: Colors.grey,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Text(
+                                    'No Friends Yet',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.grey,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
+                                  SizedBox(height: 8),
                                   Text(
-                                    entries[index].name,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                    'Add friends to see them here',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 ],
                               ),
-                              Text(
-                                '${entries[index].xp} XP',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: friends.length,
+                              itemBuilder: (context, index) {
+                                final friend = friends[index];
+                                final username = friend['username'] ?? 'Unknown';
+                                final displayName = friend['username'] ?? username;
+                                final profilePic = friend['profile_pic'] ?? '';
+                                final xp = friend['xp'] ?? 0; // Replace with actual XP field
+
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  color: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  elevation: 4,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 20,
+                                              backgroundImage: profilePic.isNotEmpty
+                                                  ? NetworkImage(profilePic)
+                                                  : null,
+                                              child: profilePic.isEmpty
+                                                  ? Text(
+                                                      displayName.isNotEmpty 
+                                                          ? displayName[0].toUpperCase() 
+                                                          : '?',
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    )
+                                                  : null,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Text(
+                                              displayName,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          '$xp XP',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                 ),
               ],
             ),
@@ -179,11 +239,4 @@ class LeaderboardScreen extends StatelessWidget {
       ),
     );
   }
-}
-
-class LeaderboardEntry {
-  final String name;
-  final int xp;
-
-  LeaderboardEntry(this.name, this.xp);
 }

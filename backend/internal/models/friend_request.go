@@ -6,10 +6,10 @@ import (
 )
 
 type FriendRequest struct {
-	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	SenderID   uuid.UUID `gorm:"type:uuid;not null;index"`
-	ReceiverID uuid.UUID `gorm:"type:uuid;not null;index"`
-	Status     string    `gorm:"type:varchar(20);not null;default:'pending'"` // pending, accepted, declined
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	SenderID   uuid.UUID `gorm:"type:uuid;not null;index" json:"sender_id"`
+	ReceiverID uuid.UUID `gorm:"type:uuid;not null;index" json:"receiver_id"`
+	Status     string    `gorm:"type:varchar(20);not null;default:'pending'" json:"status"` // pending, accepted, declined
 	CreatedAt  int64     `gorm:"autoCreateTime"`
 	UpdatedAt  int64     `gorm:"autoUpdateTime"`
 
@@ -25,7 +25,6 @@ func (fr *FriendRequest) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-// Add unique constraint to prevent duplicate friend requests
 func (FriendRequest) TableName() string {
 	return "friend_requests"
 }

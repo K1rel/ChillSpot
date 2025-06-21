@@ -6,11 +6,12 @@ import (
 )
 
 type User struct {
-	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Username   string    `gorm:"type:varchar(50);uniqueIndex;not null"`
-	Password   string    `gorm:"type:text;not null"` // Store hashed password
-	Email      string    `gorm:"type:varchar(100);uniqueIndex;not null"`
-	ProfilePic *string   `gorm:"type:text"` // Optional
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	Username   string    `gorm:"type:varchar(50);uniqueIndex;not null" json:"username"`
+	Password   string    `gorm:"type:text;not null" json:"-"` // Never output password
+	Email      string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"email"`
+	ProfilePic *string   `gorm:"type:text" json:"profile_pic"` // Optional
+	XP         int       `gorm:"default:0" json:"xp"`
 	Favorites  []Spot    `gorm:"many2many:user_favorites;"`
 	Friends    []*User   `gorm:"many2many:user_friends;"`
 
@@ -31,6 +32,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 
 func (u *User) SendFriendRequest(db *gorm.DB, receiverID uuid.UUID) (*FriendRequest, error) {
 	// Check if friend request already exists
+
 	var existingRequest FriendRequest
 	result := db.Where("sender_id = ? AND receiver_id = ? AND status = 'pending'", u.ID, receiverID).First(&existingRequest)
 	if result.Error == nil {

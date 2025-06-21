@@ -4,6 +4,7 @@ import (
 	"chillspot-backend/internal/models"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -84,11 +85,12 @@ func SearchUsersHandler(db *gorm.DB) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(filteredUsers)
+		json.NewEncoder(w).Encode(users)
 	}
 }
 
 func SendFriendRequestHandler(db *gorm.DB) http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Get user ID from context
 		userID, ok := r.Context().Value("user_id").(string)
@@ -117,7 +119,8 @@ func SendFriendRequestHandler(db *gorm.DB) http.HandlerFunc {
 			http.Error(w, "Invalid receiver ID", http.StatusBadRequest)
 			return
 		}
-
+		fmt.Printf("Received friend request: Sender=%s, Receiver=%s\n",
+			senderUUID, receiverUUID)
 		// Get sender user
 		var sender models.User
 		if err := db.First(&sender, senderUUID).Error; err != nil {
@@ -128,9 +131,10 @@ func SendFriendRequestHandler(db *gorm.DB) http.HandlerFunc {
 		// Send friend request
 		fr, err := sender.SendFriendRequest(db, receiverUUID)
 		if err != nil {
+			fmt.Printf("Friend request error: %v\n", err)
 			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				http.Error(w, "Friend request already exists", http.StatusConflict)
-			} else if err != nil && err.Error() == "already friends" {
+			} else if err.Error() == "already friends" {
 				http.Error(w, "Already friends", http.StatusConflict)
 			} else {
 				http.Error(w, "Failed to send friend request", http.StatusInternalServerError)
@@ -166,15 +170,37 @@ func GetFriendRequestsHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		// Get pending requests
 		requests, err := currentUser.GetPendingFriendRequests(db)
 		if err != nil {
 			http.Error(w, "Failed to get friend requests", http.StatusInternalServerError)
 			return
 		}
 
+		// Create a custom response with necessary user details
+		type FriendRequestResponse struct {
+			ID     uuid.UUID `json:"id"`
+			Sender struct {
+				ID         uuid.UUID `json:"id"`
+				Username   string    `json:"username"`
+				ProfilePic *string   `json:"profile_pic"`
+			} `json:"sender"`
+			CreatedAt int64 `json:"created_at"`
+		}
+
+		var response []FriendRequestResponse
+		for _, req := range requests {
+			res := FriendRequestResponse{
+				ID:        req.ID,
+				CreatedAt: req.CreatedAt,
+			}
+			res.Sender.ID = req.Sender.ID
+			res.Sender.Username = req.Sender.Username
+			res.Sender.ProfilePic = req.Sender.ProfilePic
+			response = append(response, res)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(requests)
+		json.NewEncoder(w).Encode(response)
 	}
 }
 
@@ -296,7 +322,25 @@ func GetFriendsHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		// Create response with XP
+		type FriendResponse struct {
+			ID         string  `json:"id"`
+			Username   string  `json:"username"`
+			ProfilePic *string `json:"profile_pic"`
+			XP         int     `json:"xp"` // Add your XP field here
+		}
+
+		var friendsResponse []FriendResponse
+		for _, friend := range user.Friends {
+			friendsResponse = append(friendsResponse, FriendResponse{
+				ID:         friend.ID.String(),
+				Username:   friend.Username,
+				ProfilePic: friend.ProfilePic,
+				XP:         friend.XP, // Make sure this field exists in your User model
+			})
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(user.Friends)
+		json.NewEncoder(w).Encode(friendsResponse)
 	}
 }
