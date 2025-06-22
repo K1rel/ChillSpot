@@ -146,4 +146,26 @@ class FriendService {
     throw Exception('Get friends error: $e');
   }
 }
+
+ static Future<List<Map<String, dynamic>>> getFriendsSpots() async {
+    try {
+      final headers = await _getHeaders();
+      final response = await http.get(
+        Uri.parse('$_baseUrl/friends/spots'),
+        headers: headers,
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data is List) {
+          return data.cast<Map<String, dynamic>>();
+        }
+        return [];
+      } else {
+        throw Exception('${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Get friends spots error: $e');
+    }
+  }
 }

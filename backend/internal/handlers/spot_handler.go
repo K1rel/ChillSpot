@@ -3,7 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 	"time"
 
 	"chillspot-backend/internal/models"
@@ -38,30 +43,71 @@ func AddSpotHandler(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
-		var input struct {
-			Latitude    float64 `json:"latitude"`
-			Longitude   float64 `json:"longitude"`
-			Title       string  `json:"title"`
-			Description string  `json:"description"`
-			Weather     string  `json:"weather"`
-		}
-
-		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-			http.Error(w, "Invalid input", http.StatusBadRequest)
+		// Parse multipart form
+		err = r.ParseMultipartForm(32 << 20) // 32 MB max
+		if err != nil {
+			http.Error(w, "Failed to parse form data", http.StatusBadRequest)
 			return
 		}
 
+		// Get form values
+		latitudeStr := r.FormValue("latitude")
+		longitudeStr := r.FormValue("longitude")
+		title := r.FormValue("title")
+		description := r.FormValue("description")
+		weather := r.FormValue("weather")
+
+		// Convert coordinates
+		latitude, err := strconv.ParseFloat(latitudeStr, 64)
+		if err != nil {
+			http.Error(w, "Invalid latitude", http.StatusBadRequest)
+			return
+		}
+
+		longitude, err := strconv.ParseFloat(longitudeStr, 64)
+		if err != nil {
+			http.Error(w, "Invalid longitude", http.StatusBadRequest)
+			return
+		}
+		altitudeStr := r.FormValue("altitude")
+		var altitude float64
+		if altitudeStr != "" {
+			altitude, err = strconv.ParseFloat(altitudeStr, 64)
+			if err != nil {
+				http.Error(w, "Invalid altitude", http.StatusBadRequest)
+				return
+			}
+		}
+		// Create spot
 		spot := models.Spot{
 			UserID:             userUUID,
-			Latitude:           input.Latitude,
-			Longitude:          input.Longitude,
-			Title:              input.Title,
-			Description:        input.Description,
-			RecommendedWeather: models.WeatherCondition(input.Weather),
+			Latitude:           latitude,
+			Longitude:          longitude,
+			Altitude:           altitude,
+			Title:              title,
+			Description:        description,
+			RecommendedWeather: models.WeatherCondition(weather),
 			CreatedAt:          time.Now(),
 			UpdatedAt:          time.Now(),
 		}
 
+		// Save day image
+		dayImagePath, err := saveImage(r, "day_image")
+		if err != nil {
+			http.Error(w, "Failed to save day image", http.StatusInternalServerError)
+			return
+		}
+		spot.DayImage = &dayImagePath
+
+		// Save night image
+		nightImagePath, err := saveImage(r, "night_image")
+		if err != nil {
+			http.Error(w, "Failed to save night image", http.StatusInternalServerError)
+			return
+		}
+		spot.NightImage = &nightImagePath
+
+		// Save to database
 		if err := db.Create(&spot).Error; err != nil {
 			http.Error(w, "Failed to create spot", http.StatusInternalServerError)
 			return
@@ -73,6 +119,46 @@ func AddSpotHandler(db *gorm.DB) http.HandlerFunc {
 			"spot":    spot,
 		})
 	}
+}
+
+func saveImage(r *http.Request, fieldName string) (string, error) {
+	file, header, err := r.FormFile(fieldName)
+	if err != nil {
+		if err == http.ErrMissingFile {
+			return "", nil // No file is acceptable
+		}
+		return "", err
+	}
+	defer file.Close()
+
+	// Create images directory if it doesn't exist
+	err = os.MkdirAll("internal/images", os.ModePerm)
+	if err != nil {
+		return "", err
+	}
+
+	// Create unique filename
+	ext := filepath.Ext(header.Filename)
+	if ext == "" {
+		ext = ".jpg"
+	}
+	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+	filePath := filepath.Join("internal", "images", filename)
+
+	// Save file
+	out, err := os.Create(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, file)
+	if err != nil {
+		return "", err
+	}
+
+	// Return just the filename for database storage
+	return filename, nil
 }
 
 func GetSpotsByUserHandler(db *gorm.DB) http.HandlerFunc {
@@ -133,8 +219,32 @@ func GetSpotHandler(db *gorm.DB) http.HandlerFunc {
 		spot.FavoritesCount = uint(likesCount)
 		spot.VisitCount = uint(visitCount)
 
+		// Create response with proper field names
+		response := map[string]interface{}{
+			"ID":                 spot.ID,
+			"UserID":             spot.UserID,
+			"User":               spot.User,
+			"Latitude":           spot.Latitude,
+			"Longitude":          spot.Longitude,
+			"Title":              spot.Title,
+			"Description":        spot.Description,
+			"RecommendedWeather": spot.RecommendedWeather,
+			"CreatedAt":          spot.CreatedAt,
+			"UpdatedAt":          spot.UpdatedAt,
+			"favorites_count":    spot.FavoritesCount,
+			"visit_count":        spot.VisitCount,
+		}
+
+		// Add image fields with proper handling
+		if spot.DayImage != nil && *spot.DayImage != "" {
+			response["DayImage"] = filepath.Base(*spot.DayImage)
+		}
+		if spot.NightImage != nil && *spot.NightImage != "" {
+			response["NightImage"] = filepath.Base(*spot.NightImage)
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(spot)
+		json.NewEncoder(w).Encode(response)
 	}
 }
 

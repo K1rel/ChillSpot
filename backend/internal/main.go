@@ -48,7 +48,15 @@ func main() {
 
 	// Correct path to uploads directory
 	uploadsPath := filepath.Join(projectRoot, "internal", "uploads")
+	imagesPath := filepath.Join(projectRoot, "internal", "images")
+	log.Printf("Images directory: %s", imagesPath)
 
+	// Create images directory if it doesn't exist
+	if _, err := os.Stat(imagesPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(imagesPath, 0755); err != nil {
+			log.Fatalf("Failed to create images directory: %v", err)
+		}
+	}
 	log.Printf("Current working directory: %s", wd)
 	log.Printf("Project root: %s", projectRoot)
 	log.Printf("Uploads directory: %s", uploadsPath)
@@ -63,7 +71,8 @@ func main() {
 	// Serve static files
 	staticHandler := http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsPath)))
 	r.PathPrefix("/uploads/").Handler(middleware.CorsMiddleware(staticHandler))
-
+	imagesHandler := http.StripPrefix("/images/", http.FileServer(http.Dir(imagesPath)))
+	r.PathPrefix("/images/").Handler(middleware.CorsMiddleware(imagesHandler))
 	log.Println("Server is running on :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }

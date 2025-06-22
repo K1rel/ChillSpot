@@ -160,6 +160,7 @@ func GetProfile(db *gorm.DB) http.HandlerFunc {
 			"username":    user.Username,
 			"email":       user.Email,
 			"profile_pic": profilePicURL,
+			"xp":          user.XP,
 		}
 
 		w.Header().Set("Content-Type", "application/json")

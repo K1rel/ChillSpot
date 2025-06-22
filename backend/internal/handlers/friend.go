@@ -344,3 +344,43 @@ func GetFriendsHandler(db *gorm.DB) http.HandlerFunc {
 		json.NewEncoder(w).Encode(friendsResponse)
 	}
 }
+
+func GetFriendsSpotsHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Get user ID from context
+		userID, ok := r.Context().Value("user_id").(string)
+		if !ok || userID == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		// Get user's friends
+		var user models.User
+		if err := db.Preload("Friends").First(&user, userUUID).Error; err != nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		// Collect friend IDs
+		friendIDs := make([]uuid.UUID, len(user.Friends))
+		for i, friend := range user.Friends {
+			friendIDs[i] = friend.ID
+		}
+
+		// Get spots for friends
+		var spots []models.Spot
+		if err := db.Where("user_id IN (?)", friendIDs).Find(&spots).Error; err != nil {
+			http.Error(w, "Failed to fetch spots", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(spots)
+	}
+}

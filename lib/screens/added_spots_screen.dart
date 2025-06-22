@@ -98,7 +98,7 @@ class _AddedSpotsScreenState extends State<AddedSpotsScreen> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString()),
+                                      builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString(), isFriendSpot: false,),
                                     ),
                                   );
                                 },

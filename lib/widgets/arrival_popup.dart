@@ -20,13 +20,13 @@ class _ArrivalPopupState extends State<ArrivalPopup> {
   final TextEditingController _notesController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _markAsVisited() async {
+   Future<void> _markAsVisited() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      await VisitedSpotService.addVisitedSpot(
+      final result = await VisitedSpotService.addVisitedSpot(
         spotId: widget.nearbySpot.spotId,
         notes: _notesController.text,
       );
@@ -34,10 +34,20 @@ class _ArrivalPopupState extends State<ArrivalPopup> {
       widget.onVisitedAdded();
       Navigator.of(context).pop();
       
+      // Show XP gain in snackbar
+      final xpGained = result['xp_gained'] ?? 10;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.nearbySpot.title} marked as visited!'),
+          content: Row(
+            children: [
+              Icon(Icons.star, color: Colors.yellow),
+              SizedBox(width: 10),
+              Text('${widget.nearbySpot.title} visited! +$xpGained XP'),
+            ],
+          ),
           backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
@@ -51,8 +61,7 @@ class _ArrivalPopupState extends State<ArrivalPopup> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
+    }}
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +174,29 @@ class _ArrivalPopupState extends State<ArrivalPopup> {
                   ),
                 ),
               ],
+            ),
+             Container(
+              margin: EdgeInsets.only(top: 10, bottom: 10),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.star, color: Colors.amber),
+                  SizedBox(width: 8),
+                  Text(
+                    "Earn XP for visiting!",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[800],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

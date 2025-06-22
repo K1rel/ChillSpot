@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class VisitedSpotService {
   static const String _baseUrl = 'http://10.0.2.2:8080';
 
-  static Future<void> addVisitedSpot({
+  static Future<Map<String, dynamic>> addVisitedSpot({
     required String spotId,
     String notes = '',
   }) async {
@@ -28,9 +28,16 @@ class VisitedSpotService {
       }),
     );
 
-    if (response.statusCode != 201) {
-      throw Exception('Failed to add visited spot: ${response.body}');
-    }
+   if (response.statusCode == 201) {
+    final data = json.decode(response.body);
+    return {
+      'success': true,
+      'xp_gained': data['xp_gained'] ?? 10, 
+      'visited_spot': data['visited_spot'],
+    };
+  } else {
+    throw Exception('Failed to add visited spot: ${response.body}');
+  }
   }
 
   static Future<List<dynamic>> getVisitedSpots() async {

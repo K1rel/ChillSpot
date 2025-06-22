@@ -15,13 +15,21 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
   List<dynamic> _visitedSpots = [];
   bool _isLoading = true;
   String? _error;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
+     _loadCurrentUserId();
     _loadVisitedSpots();
+    
   }
-
+ Future<void> _loadCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _currentUserId = prefs.getString('userId');
+    });
+  }
   Future<void> _loadVisitedSpots() async {
     setState(() {
       _isLoading = true;
@@ -76,6 +84,12 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
                             ? DateTime.parse(visitedSpot['VisitedAt'])
                             : null;
                         
+                        // Determine if it's a friend's spot
+                        final spotOwnerId = spot['UserID']?.toString();
+                        final isFriendSpot = spotOwnerId != null && 
+                                            _currentUserId != null && 
+                                            spotOwnerId != _currentUserId;
+                        
                         return Card(
                           margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                           color: const Color(0xFF283D3A),
@@ -91,13 +105,16 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
                               ),
                             ),
                             onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString()),
-                                      ),
-                                    );
-                                  },
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SpotDetailScreen(
+                                    spotId: spot['ID'].toString(),
+                                    isFriendSpot: isFriendSpot,
+                                  ),
+                                ),
+                              );
+                            },
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -105,6 +122,17 @@ class _VisitedSpotsScreenState extends State<VisitedSpotsScreen> {
                                   Text(
                                     'Visited: ${DateFormat.yMMMd().add_jm().format(visitedAt)}',
                                     style: TextStyle(color: Colors.white70),
+                                  ),
+                                if (isFriendSpot)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      "Friend's spot",
+                                      style: TextStyle(
+                                        color: Colors.blue[200],
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
                                   ),
                                 if (visitedSpot['Notes'] != null && visitedSpot['Notes'].isNotEmpty)
                                   Padding(

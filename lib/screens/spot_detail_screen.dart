@@ -7,14 +7,15 @@ import 'package:intl/intl.dart';
 
 class SpotDetailScreen extends StatefulWidget {
   final String spotId;
-
-  const SpotDetailScreen({Key? key, required this.spotId}) : super(key: key);
+  
+  const SpotDetailScreen({Key? key, required this.spotId, required bool isFriendSpot}) : super(key: key);
 
   @override
   _SpotDetailScreenState createState() => _SpotDetailScreenState();
 }
 
 class _SpotDetailScreenState extends State<SpotDetailScreen> {
+  
   Map<String, dynamic>? _spot;
   List<dynamic> _reviews = [];
   bool _isLoading = true;
@@ -57,28 +58,34 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
     });
   }
 
-  Future<void> _loadSpotDetails() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+ Future<void> _loadSpotDetails() async {
+  setState(() {
+    _isLoading = true;
+    _error = null;
+  });
 
-    try {
-      final spot = await SpotService.getSpotById(widget.spotId);
-      final reviews = await ReviewService.getReviewsForSpot(widget.spotId);
-      
-      setState(() {
-        _spot = spot;
-        _reviews = reviews;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to load spot: $e';
-        _isLoading = false;
-      });
-    }
+  try {
+    final spot = await SpotService.getSpotById(widget.spotId);
+    final reviews = await ReviewService.getReviewsForSpot(widget.spotId);
+    
+    // Debug prints
+    print('Loaded spot data: $spot');
+    print('Day image URL: ${spot['DayImageUrl']}');
+    print('Night image URL: ${spot['NightImageUrl']}');
+    
+    setState(() {
+      _spot = spot;
+      _reviews = reviews;
+      _isLoading = false;
+    });
+  } catch (e) {
+    print('Error loading spot details: $e');
+    setState(() {
+      _error = 'Failed to load spot: $e';
+      _isLoading = false;
+    });
   }
+}
 
  Future<void> _likeSpot() async {
   if (_isLiked) return;
@@ -144,6 +151,93 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
       });
     }
   }
+  Widget _buildImageGallery() {
+  List<Widget> images = [];
+
+  if (_spot?['DayImageUrl'] != null) {
+    images.add(
+      CachedNetworkImage(
+        imageUrl: _spot!['DayImageUrl'],
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Center(
+          child: CircularProgressIndicator(),
+        ),
+        errorWidget: (context, url, error) {
+          print('Error loading day image: $error');
+          return Container(
+            color: Colors.grey,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  Text('Day Image Error', style: TextStyle(color: Colors.white)),
+                  Text(
+                    'URL: ${_spot!['DayImageUrl']}',
+                    style: TextStyle(color: Colors.white70, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  if (_spot?['NightImageUrl'] != null) {
+    images.add(
+      CachedNetworkImage(
+        imageUrl: _spot!['NightImageUrl'],
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Center(
+          child: CircularProgressIndicator(),
+        ),
+        errorWidget: (context, url, error) {
+          print('Error loading night image: $error');
+          return Container(
+            color: Colors.grey,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  Text('Night Image Error', style: TextStyle(color: Colors.white)),
+                  Text(
+                    'URL: ${_spot!['NightImageUrl']}',
+                    style: TextStyle(color: Colors.white70, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  if (images.isEmpty) {
+    return Container(
+      height: 250,
+      color: Colors.grey,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_not_supported, size: 50, color: Colors.white),
+            Text('No images available', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  return SizedBox(
+    height: 250,
+    child: PageView(children: images),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -163,28 +257,8 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Image Gallery
-                      if (_spot?['DayImage'] != null || _spot?['NightImage'] != null)
-                        SizedBox(
-                          height: 250,
-                          child: PageView(
-                            children: [
-                              if (_spot?['DayImage'] != null)
-                                CachedNetworkImage(
-                                  imageUrl: _spot!['DayImage'],
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) => Icon(Icons.error),
-                                ),
-                              if (_spot?['NightImage'] != null)
-                                CachedNetworkImage(
-                                  imageUrl: _spot!['NightImage'],
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Center(child: CircularProgressIndicator()),
-                                  errorWidget: (context, url, error) => Icon(Icons.error),
-                                ),
-                            ],
-                          ),
-                        ),
+                      _buildImageGallery(),
+
                       
                       SizedBox(height: 20),
                       

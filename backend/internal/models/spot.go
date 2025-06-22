@@ -22,6 +22,7 @@ type Spot struct {
 	User               User             `gorm:"foreignKey:UserID"`
 	Latitude           float64          `gorm:"type:double precision;not null"`
 	Longitude          float64          `gorm:"type:double precision;not null"`
+	Altitude           float64          `gorm:"type:double precision;not null;default:0"`
 	Title              string           `gorm:"type:varchar(100);not null"`
 	Description        string           `gorm:"type:text;not null"`
 	DayImage           *string          `gorm:"type:text"`

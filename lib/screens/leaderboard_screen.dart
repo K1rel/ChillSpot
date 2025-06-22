@@ -25,6 +25,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     setState(() => isLoading = true);
     try {
       final friendsList = await FriendService.getFriends();
+
+        friendsList.sort((a, b) {
+      final aXP = a['xp'] ?? 0; // Default to 0 if XP is null
+      final bXP = b['xp'] ?? 0; // Default to 0 if XP is null
+      return bXP.compareTo(aXP); // Descending order
+    });
       setState(() {
         friends = friendsList;
         isLoading = false;
@@ -174,61 +180,93 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                 final displayName = friend['username'] ?? username;
                                 final profilePic = friend['profile_pic'] ?? '';
                                 final xp = friend['xp'] ?? 0; // Replace with actual XP field
+                                final position = index + 1; // Leaderboard position
 
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  elevation: 4,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 20,
-                                              backgroundImage: profilePic.isNotEmpty
-                                                  ? NetworkImage(profilePic)
-                                                  : null,
-                                              child: profilePic.isEmpty
-                                                  ? Text(
-                                                      displayName.isNotEmpty 
-                                                          ? displayName[0].toUpperCase() 
-                                                          : '?',
-                                                      style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    )
-                                                  : null,
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Text(
-                                              displayName,
-                                              style: const TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Text(
-                                          '$xp XP',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
+                                // Different colors for top positions
+                                Color positionColor = Colors.grey;
+                                if (position == 1) positionColor = Colors.amber;
+                                if (position == 2) positionColor = Colors.grey[400]!;
+                                if (position == 3) positionColor = Colors.brown[400]!;
+                               return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                // Position indicator
+                Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: positionColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    position.toString(),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: position <= 3 ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundImage: profilePic.isNotEmpty
+                      ? NetworkImage(profilePic)
+                      : null,
+                  child: profilePic.isEmpty
+                      ? Text(
+                          displayName.isNotEmpty 
+                              ? displayName[0].toUpperCase() 
+                              : '?',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  displayName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+            // XP display with star icon
+            Row(
+              children: [
+                Icon(Icons.star, color: Colors.amber, size: 20),
+                const SizedBox(width: 4),
+                Text(
+                  '$xp XP',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
                               },
                             ),
                 ),

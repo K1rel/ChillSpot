@@ -1,5 +1,6 @@
 import 'package:domasna/screens/place_detail_screen.dart';
 import 'package:domasna/screens/spot_detail_screen.dart';
+import 'package:domasna/services/friend_service.dart';
 import 'package:domasna/services/spot_service.dart';
 import 'package:domasna/services/visited_spot_service.dart';
 import 'package:domasna/widgets/arrival_popup.dart';
@@ -24,6 +25,10 @@ class _MapScreenState extends State<MapScreen> {
   bool isLoadingRoute = false;
   List<Marker> savedMarkers = [];  
   List<Marker> controllerMarkers = [];
+  bool showFriendsMarkers = false;
+  List<Marker> friendsMarkers = [];
+  String? _currentUserId; 
+
   
   // Location tracking for arrival detection
   Timer? _locationCheckTimer;
@@ -33,7 +38,7 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    
+    _loadCurrentUserId();
     controller.markersStream.listen((updatedMarkers) {
       setState(() {
         markers = updatedMarkers;
@@ -108,7 +113,12 @@ class _MapScreenState extends State<MapScreen> {
       _startLocationTracking();
     });
   }
-  
+  Future<void> _loadCurrentUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _currentUserId = prefs.getString('userId');
+    });
+  }
   void _startLocationTracking() {
     // Check for nearby spots every 30 seconds
     _locationCheckTimer = Timer.periodic(Duration(seconds: 30), (_) {
@@ -178,6 +188,9 @@ class _MapScreenState extends State<MapScreen> {
       final spots = await SpotService.getSpotsByUserId();
       setState(() {
         savedMarkers = spots.map((spot) {
+                final isFriendSpot = spot['UserID'] != null && 
+                            _currentUserId != null && 
+                            spot['UserID'] != _currentUserId;
           return Marker(
             point: LatLng(spot['Latitude'], spot['Longitude']),
             width: 100,
@@ -200,7 +213,7 @@ class _MapScreenState extends State<MapScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString()),
+                      builder: (context) => SpotDetailScreen(spotId: spot['ID'].toString(), isFriendSpot: isFriendSpot,),
                     ),
                   );
                 },
@@ -232,6 +245,75 @@ class _MapScreenState extends State<MapScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load saved spots: $e')),
+      );
+    }
+  }
+   Future<void> _loadFriendsSpots() async {
+    try {
+      final friendsSpots = await FriendService.getFriendsSpots();
+      setState(() {
+        friendsMarkers = friendsSpots.map((spot) {
+          return Marker(
+            point: LatLng(spot['Latitude'], spot['Longitude']),
+            width: 100,
+            height: 80,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                                onTap: () {
+                  if (controller.currentLocation != null) {
+                    controller.calculateRoute(
+                      controller.currentLocation!,
+                      LatLng(spot['Latitude'], spot['Longitude'])
+                    );
+                  }
+                },
+                // Keep onLongPress for details
+                onLongPress: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SpotDetailScreen(
+                        spotId: spot['ID'].toString(),
+                        isFriendSpot: true,
+                      ),
+                    ),
+                  );
+                },
+                child: Icon(Icons.location_on, color: Colors.blue, size: 40),
+
+                ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxHeight: 40, maxWidth: 100),
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(5),
+                      boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 2)],
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        spot['Title'] ?? 'Friend\'s Spot',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load friends spots: $e')),
       );
     }
   }
@@ -288,6 +370,7 @@ class _MapScreenState extends State<MapScreen> {
                 ...savedMarkers,
                 ...controller.visitedMarkers, // Use controller's visited markers
                 ...controllerMarkers,
+                if (showFriendsMarkers) ...friendsMarkers,
               ]),
             ],
           ),
@@ -398,6 +481,14 @@ class _MapScreenState extends State<MapScreen> {
                       Text('Visited', style: TextStyle(fontSize: 12)),
                     ],
                   ),
+                  SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.blue, size: 16),
+                        SizedBox(width: 5),
+                        Text('Friends', style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
                 ],
               ),
             ),
@@ -463,28 +554,29 @@ class _MapScreenState extends State<MapScreen> {
             ),
           ),
           // Refresh visited spots button
-          Positioned(
-            bottom: 100,
-            right: 20,
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFF606C38),
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.refresh),
-                color: Colors.white,
-                onPressed: () {
-                  controller.loadVisitedSpots();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Refreshed visited spots')),
-                  );
-                },
-              ),
-            ),
-          ),
+         Positioned(
+  bottom: 240,  // Adjust position as needed
+  right: 20,
+  child: Container(
+    width: 60,
+    height: 60,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: showFriendsMarkers ? Colors.blue : Color(0xFF606C38),
+    ),
+    child: IconButton(
+      icon: Icon(Icons.people, color: Colors.white),
+      onPressed: () async {
+        setState(() {
+          showFriendsMarkers = !showFriendsMarkers;
+        });
+        if (showFriendsMarkers) {
+          await _loadFriendsSpots();
+        }
+      },
+    ),
+  ),
+),
           // Loading indicator for route calculation
           if (isLoadingRoute)
             Positioned(

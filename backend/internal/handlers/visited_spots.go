@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"math"
 	"net/http"
 	"time"
@@ -98,14 +99,26 @@ func AddVisitedSpotHandler(db *gorm.DB) http.HandlerFunc {
 			Notes:     input.Notes,
 		}
 
+		// Create visited spot
 		if err := db.Create(&visitedSpot).Error; err != nil {
 			http.Error(w, "Failed to add visited spot", http.StatusInternalServerError)
 			return
 		}
 
+		// Update user XP
+		if err := db.Model(&models.User{}).
+			Where("id = ?", userUUID).
+			Update("xp", gorm.Expr("xp + ?", 10)). // Add 10 XP
+			Error; err != nil {
+			// We don't rollback here, just log the error
+			// Consider adding proper error handling for production
+			log.Printf("Failed to update user XP: %v", err)
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]any{
 			"message":      "Visited spot added",
+			"xp_gained":    10,
 			"visited_spot": visitedSpot,
 		})
 	}
