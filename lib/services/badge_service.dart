@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:domasna/models/badge_model.dart';
 
 class BadgeService {
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
   static Future<BadgeCheckResponse> checkAndGetBadges() async {
     final prefs = await SharedPreferences.getInstance();
