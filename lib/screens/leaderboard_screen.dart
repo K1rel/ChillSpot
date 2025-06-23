@@ -26,11 +26,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     try {
       final friendsList = await FriendService.getFriends();
 
-        friendsList.sort((a, b) {
-      final aXP = a['xp'] ?? 0; // Default to 0 if XP is null
-      final bXP = b['xp'] ?? 0; // Default to 0 if XP is null
-      return bXP.compareTo(aXP); // Descending order
-    });
+      friendsList.sort((a, b) {
+        final aXP = a['xp'] ?? 0;
+        final bXP = b['xp'] ?? 0;
+        return bXP.compareTo(aXP);
+      });
       setState(() {
         friends = friendsList;
         isLoading = false;
@@ -74,65 +74,75 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       CustomBackButton(
                         onTap: () => Navigator.pop(context),
                       ),
-                      Row(
-                        children: [
-                          // Friend Requests Button
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FriendRequestsScreen(),
+                      Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              children: [
+                                // Add space between back button and requests button
+                                const SizedBox(width: 20), // NEW: Added spacing here
+                                // Friend Requests Button
+                                SizedBox(
+                                  width: 140,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => FriendRequestsScreen(),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.person_add, size: 18),
+                                    label: const Text('Requests'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                      elevation: 4,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              );
-                            },
-                            icon: const Icon(Icons.person_add, size: 18),
-                            label: const Text('Requests'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange,
-                              foregroundColor: Colors.white,
-                              elevation: 4,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                                const SizedBox(width: 12),
+                                // Add Friend Button
+                                SizedBox(
+                                  width: 140,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => AddFriendScreen(),
+                                        ),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: Colors.black,
+                                      elevation: 4,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    child: const Text(
+                                      'Add a friend',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          // Add Friend Button
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AddFriendScreen(),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              elevation: 4,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text(
-                              'Add a friend',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -179,94 +189,93 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                                 final username = friend['username'] ?? 'Unknown';
                                 final displayName = friend['username'] ?? username;
                                 final profilePic = friend['profile_pic'] ?? '';
-                                final xp = friend['xp'] ?? 0; // Replace with actual XP field
-                                final position = index + 1; // Leaderboard position
+                                final xp = friend['xp'] ?? 0;
+                                final position = index + 1;
 
-                                // Different colors for top positions
                                 Color positionColor = Colors.grey;
                                 if (position == 1) positionColor = Colors.amber;
                                 if (position == 2) positionColor = Colors.grey[400]!;
                                 if (position == 3) positionColor = Colors.brown[400]!;
-                               return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                // Position indicator
-                Container(
-                  width: 30,
-                  height: 30,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: positionColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    position.toString(),
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: position <= 3 ? Colors.white : Colors.black,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: profilePic.isNotEmpty
-                      ? NetworkImage(profilePic)
-                      : null,
-                  child: profilePic.isEmpty
-                      ? Text(
-                          displayName.isNotEmpty 
-                              ? displayName[0].toUpperCase() 
-                              : '?',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            // XP display with star icon
-            Row(
-              children: [
-                Icon(Icons.star, color: Colors.amber, size: 20),
-                const SizedBox(width: 4),
-                Text(
-                  '$xp XP',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  color: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  elevation: 4,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            // Position indicator
+                                            Container(
+                                              width: 30,
+                                              height: 30,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: positionColor,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                position.toString(),
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: position <= 3 ? Colors.white : Colors.black,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 16),
+                                            CircleAvatar(
+                                              radius: 20,
+                                              backgroundImage: profilePic.isNotEmpty
+                                                  ? NetworkImage(profilePic)
+                                                  : null,
+                                              child: profilePic.isEmpty
+                                                  ? Text(
+                                                      displayName.isNotEmpty 
+                                                          ? displayName[0].toUpperCase() 
+                                                          : '?',
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    )
+                                                  : null,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Text(
+                                              displayName,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // XP display with star icon
+                                        Row(
+                                          children: [
+                                            Icon(Icons.star, color: Colors.amber, size: 20),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              '$xp XP',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
                               },
                             ),
                 ),

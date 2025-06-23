@@ -28,6 +28,7 @@ func main() {
 		&models.VisitedSpot{},
 		&models.Like{},
 		&models.FriendRequest{},
+		&models.BadgeDefinition{},
 	)
 	if err != nil {
 		log.Fatal("Migration failed:", err)

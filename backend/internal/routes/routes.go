@@ -52,5 +52,10 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 	protected.HandleFunc("/friends/decline", handlers.DeclineFriendRequestHandler(db)).Methods("POST")
 	protected.HandleFunc("/friends", handlers.GetFriendsHandler(db)).Methods("GET")
 	protected.HandleFunc("/friends/spots", handlers.GetFriendsSpotsHandler(db)).Methods("GET")
+
+	//badges
+
+	protected.HandleFunc("/badges/check", handlers.CheckBadgesHandler(db)).Methods("POST")
+	protected.HandleFunc("/badges", handlers.GetUserBadgesHandler(db)).Methods("GET")
 	return r
 }
