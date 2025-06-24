@@ -42,8 +42,19 @@ func Register(db *gorm.DB) http.HandlerFunc {
 			return
 		}
 
+		// Generate JWT token for the new user
+		token, err := auth.GenerateToken(user.ID.String())
+		if err != nil {
+			http.Error(w, "Error generating token", http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{"message": "User created"})
+		json.NewEncoder(w).Encode(map[string]string{
+			"message": "User created",
+			"token":   token,
+			"user_id": user.ID.String(),
+		})
 	}
 }
 

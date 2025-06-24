@@ -7,19 +7,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   static const String _baseUrl = 'http://10.0.2.2:8080';
 
-  static Future<http.Response> register(String email, String username, String password) async {
-    final response = await http.post(
-      Uri.parse('$_baseUrl/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'username': username,
-        'password': password,
-        'email': email,
-      }),
-    );
+ static Future<Map<String, dynamic>> register(String email, String username, String password) async {
+  final response = await http.post(
+    Uri.parse('$_baseUrl/register'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'username': username,
+      'password': password,
+      'email': email,
+    }),
+  );
 
- return response;
+  if (response.statusCode == 201) { // 201 Created
+    final data = jsonDecode(response.body);
+    final token = data['token'];
+    final userId = data['user_id'];
+    
+    // Store token and user ID
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setString('user_id', userId);
+    
+    return data;
+  } else {
+    throw Exception('Registration failed: ${response.body}');
   }
+}
 
    static Future<Map<String, dynamic>> login(String username, String password) async {
     final response = await http.post(
@@ -112,6 +125,34 @@ class AuthService {
 
     return jsonDecode(responseData);
   }
+
+  static Future<void> forgotPassword(String email) async {
+  final response = await http.post(
+    Uri.parse('$_baseUrl/forgot-password'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'email': email}),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to send reset email: ${response.body}');
+  }
+}
+
+static Future<void> resetPassword(String email, String code, String newPassword) async {
+  final response = await http.post(
+    Uri.parse('$_baseUrl/reset-password'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'email': email,
+      'reset_code': code,
+      'new_password': newPassword,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to reset password: ${response.body}');
+  }
+}
 }
   
 

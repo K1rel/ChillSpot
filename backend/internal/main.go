@@ -2,6 +2,7 @@ package main
 
 import (
 	"chillspot-backend/internal/db"
+	"chillspot-backend/internal/mailer"
 	"chillspot-backend/internal/middleware"
 	"chillspot-backend/internal/models"
 	"chillspot-backend/internal/routes"
@@ -28,6 +29,8 @@ func main() {
 		&models.VisitedSpot{},
 		&models.Like{},
 		&models.FriendRequest{},
+		&models.PasswordResetToken{},
+		&models.BadgeDefinition{},
 	)
 	if err != nil {
 		log.Fatal("Migration failed:", err)
@@ -38,7 +41,15 @@ func main() {
 		log.Println("Warning: No .env file found - using default environment variables")
 	}
 
-	r := routes.SetupRoutes(database)
+	mailer := mailer.NewMailer(
+		"smtp.mailtrap.io",
+		2525,
+		os.Getenv("MAILTRAP_USERNAME"),
+		os.Getenv("MAILTRAP_PASSWORD"),
+		"no-reply@chillspot.com",
+	)
+
+	r := routes.SetupRoutes(database, mailer)
 
 	// Get absolute path to uploads directory - FIXED PATH
 	wd, _ := os.Getwd()

@@ -10,8 +10,11 @@ type Review struct {
 	UserID     uuid.UUID `gorm:"type:uuid;not null;index"`
 	SpotID     uuid.UUID `gorm:"type:uuid;not null;index"`
 	Likes      int       `gorm:"default:0"`
-	Text       string    `gorm:"type:varchar(500); not null"` // maksimum dolzhina na recenzija da bide 500 karakteri
+	Text       string    `gorm:"type:varchar(500); not null"`
 	CreditedAt int64     `gorm:"autoCreateTime"`
+
+	// Add spot relationship for title
+	Spot Spot `gorm:"foreignKey:SpotID"`
 }
 
 func (r *Review) BeforeCreate(tx *gorm.DB) (err error) {

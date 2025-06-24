@@ -2,6 +2,7 @@
 
 import 'package:domasna/components/custom_rich_text.dart';
 import 'package:domasna/components/elevated_button.dart';
+import 'package:domasna/screens/forgot_password_screen.dart';
 import 'package:domasna/screens/profile_screen.dart';
 import 'package:domasna/screens/sign_up_screen.dart';
 import 'package:domasna/services/auth_service.dart';
@@ -86,16 +87,21 @@ class _SignInScreenState extends State<SignInScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {},
-                      child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          color: Colors.cyan,
-                          fontSize: 12,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+    );
+  },
+  child: Text(
+    'Forgot password?',
+    style: TextStyle(
+      color: Colors.cyan,
+      fontSize: 12,
+      decoration: TextDecoration.underline,
+    ),
+  ),
+),
                   ),
                   const SizedBox(height: 40),
                   CustomElevatedButton(

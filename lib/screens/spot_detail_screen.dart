@@ -33,24 +33,23 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
      _trackVisit();
   }
 
-
   Future<void> _trackVisit() async {
-  try {
-    await SpotService.trackVisit(widget.spotId);
-    // Update UI immediately
-    setState(() {
-      if (_spot != null) {
-        _spot = {
-          ..._spot!,
-          'VisitCount': (_spot!['VisitCount'] ?? 0) + 1,
-        };
-      }
-    });
-  } catch (e) {
-    print('Failed to track visit: $e');
+    try {
+      await SpotService.trackVisit(widget.spotId);
+      setState(() {
+        if (_spot != null) {
+          _spot = {
+            ..._spot!,
+            'VisitCount': (_spot!['VisitCount'] ?? 0) + 1,
+          };
+        }
+      });
+    } catch (e) {
+      print('Failed to track visit: $e');
+    }
   }
-}
-   Future<void> _checkIfLiked() async {
+
+  Future<void> _checkIfLiked() async {
     final prefs = await SharedPreferences.getInstance();
     final likedSpots = prefs.getStringList('liked_spots') ?? [];
     setState(() {
@@ -58,74 +57,73 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
     });
   }
 
- Future<void> _loadSpotDetails() async {
-  setState(() {
-    _isLoading = true;
-    _error = null;
-  });
+  Future<void> _loadSpotDetails() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-  try {
-    final spot = await SpotService.getSpotById(widget.spotId);
-    final reviews = await ReviewService.getReviewsForSpot(widget.spotId);
-    
-    // Debug prints
-    print('Loaded spot data: $spot');
-    print('Day image URL: ${spot['DayImageUrl']}');
-    print('Night image URL: ${spot['NightImageUrl']}');
-    
-    setState(() {
-      _spot = spot;
-      _reviews = reviews;
-      _isLoading = false;
-    });
-  } catch (e) {
-    print('Error loading spot details: $e');
-    setState(() {
-      _error = 'Failed to load spot: $e';
-      _isLoading = false;
-    });
+    try {
+      final spot = await SpotService.getSpotById(widget.spotId);
+      final reviews = await ReviewService.getReviewsForSpot(widget.spotId);
+      
+      print('Loaded spot data: $spot');
+      print('Day image URL: ${spot['DayImageUrl']}');
+      print('Night image URL: ${spot['NightImageUrl']}');
+      
+      setState(() {
+        _spot = spot;
+        _reviews = reviews;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading spot details: $e');
+      setState(() {
+        _error = 'Failed to load spot: $e';
+        _isLoading = false;
+      });
+    }
   }
-}
 
- Future<void> _likeSpot() async {
-  if (_isLiked) return;
-  
-  setState(() {
-    _isLiking = true;
-  });
-
-  try {
-    await SpotService.likeSpot(widget.spotId);
+  Future<void> _likeSpot() async {
+    if (_isLiked) return;
     
-    // Update local storage
-    final prefs = await SharedPreferences.getInstance();
-    final likedSpots = prefs.getStringList('liked_spots') ?? [];
-    likedSpots.add(widget.spotId);
-    await prefs.setStringList('liked_spots', likedSpots);
+    setState(() {
+      _isLiking = true;
+    });
 
-    // Update UI
-    setState(() {
-      _isLiked = true;
-      if (_spot != null) {
-        _spot = {
-          ..._spot!,
-          'FavoritesCount': (_spot!['FavoritesCount'] ?? 0) + 1,
-        };
-      }
-    });
-    
-    // Optional: Refresh full data
-    await _loadSpotDetails();
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Failed to like spot: $e')),
-    );
-  } finally {
-    setState(() {
-      _isLiking = false;
-    });
+    try {
+      await SpotService.likeSpot(widget.spotId);
+      
+      final prefs = await SharedPreferences.getInstance();
+      final likedSpots = prefs.getStringList('liked_spots') ?? [];
+      likedSpots.add(widget.spotId);
+      await prefs.setStringList('liked_spots', likedSpots);
+
+      setState(() {
+        _isLiked = true;
+        if (_spot != null) {
+          _spot = {
+            ..._spot!,
+            'FavoritesCount': (_spot!['FavoritesCount'] ?? 0) + 1,
+          };
+        }
+      });
+      
+      await _loadSpotDetails();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to like spot: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLiking = false;
+      });
+    }
   }
-}
 
   Future<void> _submitReview() async {
     if (_reviewController.text.isEmpty) return;
@@ -140,10 +138,13 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
         text: _reviewController.text,
       );
       _reviewController.clear();
-      await _loadSpotDetails(); // Refresh data
+      await _loadSpotDetails();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit review: $e')),
+        SnackBar(
+          content: Text('Failed to submit review: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() {
@@ -151,106 +152,146 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
       });
     }
   }
+
   Widget _buildImageGallery() {
-  List<Widget> images = [];
+    List<Widget> images = [];
 
-  if (_spot?['DayImageUrl'] != null) {
-    images.add(
-      CachedNetworkImage(
-        imageUrl: _spot!['DayImageUrl'],
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Center(
-          child: CircularProgressIndicator(),
-        ),
-        errorWidget: (context, url, error) {
-          print('Error loading day image: $error');
-          return Container(
-            color: Colors.grey,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, color: Colors.white),
-                  Text('Day Image Error', style: TextStyle(color: Colors.white)),
-                  Text(
-                    'URL: ${_spot!['DayImageUrl']}',
-                    style: TextStyle(color: Colors.white70, fontSize: 10),
-                  ),
-                ],
+    if (_spot?['DayImageUrl'] != null) {
+      images.add(
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: CachedNetworkImage(
+            imageUrl: _spot!['DayImageUrl'],
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFFDDA15E)),
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  if (_spot?['NightImageUrl'] != null) {
-    images.add(
-      CachedNetworkImage(
-        imageUrl: _spot!['NightImageUrl'],
-        fit: BoxFit.cover,
-        placeholder: (context, url) => Center(
-          child: CircularProgressIndicator(),
-        ),
-        errorWidget: (context, url, error) {
-          print('Error loading night image: $error');
-          return Container(
-            color: Colors.grey,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error, color: Colors.white),
-                  Text('Night Image Error', style: TextStyle(color: Colors.white)),
-                  Text(
-                    'URL: ${_spot!['NightImageUrl']}',
-                    style: TextStyle(color: Colors.white70, fontSize: 10),
+            errorWidget: (context, url, error) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error, color: Colors.white, size: 32),
+                      SizedBox(height: 8),
+                      Text('Day Image Error', 
+                           style: TextStyle(color: Colors.white, fontSize: 14)),
+                    ],
                   ),
-                ],
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    if (_spot?['NightImageUrl'] != null) {
+      images.add(
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: CachedNetworkImage(
+            imageUrl: _spot!['NightImageUrl'],
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[800],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFFDDA15E)),
               ),
             ),
-          );
-        },
-      ),
-    );
-  }
+            errorWidget: (context, url, error) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[800],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error, color: Colors.white, size: 32),
+                      SizedBox(height: 8),
+                      Text('Night Image Error', 
+                           style: TextStyle(color: Colors.white, fontSize: 14)),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+    }
 
-  if (images.isEmpty) {
+    if (images.isEmpty) {
+      return Container(
+        height: 250,
+        decoration: BoxDecoration(
+          color: Colors.grey[800],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.image_not_supported, size: 50, color: Colors.white70),
+              SizedBox(height: 12),
+              Text('No images available', 
+                   style: TextStyle(color: Colors.white70, fontSize: 16)),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       height: 250,
-      color: Colors.grey,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.image_not_supported, size: 50, color: Colors.white),
-            Text('No images available', style: TextStyle(color: Colors.white)),
-          ],
-        ),
+      child: PageView(
+        children: images,
       ),
     );
   }
-
-  return SizedBox(
-    height: 250,
-    child: PageView(children: images),
-  );
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_spot?['Title'] ?? 'Spot Details'),
+        title: Text(_spot?['Title'] ?? 'Spot Details', 
+                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         backgroundColor: const Color(0xFF162927),
+        iconTheme: IconThemeData(color: Colors.white),
+        elevation: 0,
       ),
       backgroundColor: const Color(0xFF162927),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: Color(0xFFDDA15E)))
           : _error != null
-              ? Center(child: Text(_error!, style: TextStyle(color: Colors.white)))
+              ? Center(
+                  child: Container(
+                    margin: EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    ),
+                    child: Text(_error!, 
+                               style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ),
+                )
               : SingleChildScrollView(
                   padding: EdgeInsets.all(16),
                   child: Column(
@@ -258,88 +299,186 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                     children: [
                       // Image Gallery
                       _buildImageGallery(),
-
                       
-                      SizedBox(height: 20),
+                      SizedBox(height: 24),
                       
-                      // Spot Info
-                      Text(
-                        _spot?['Title'] ?? 'Unknown Spot',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      // Spot Info Card
+                      Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF283D3A),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ),
-                      
-                      SizedBox(height: 10),
-                      
-                      Text(
-                        _spot?['Description'] ?? 'No description',
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _spot?['Title'] ?? 'Unknown Spot',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            
+                            SizedBox(height: 12),
+                            
+                            Text(
+                              _spot?['Description'] ?? 'No description',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9), 
+                                fontSize: 16,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       
                       SizedBox(height: 20),
                       
                       // Stats Row
-                      Row(
-                      children: [
-                        // Each item wrapped in Expanded
-                        Expanded(
-                          child: _buildStatItem(
-                            Icons.favorite, 
-                            '${_spot?['FavoritesCount'] ?? 0} Likes'
-                          ),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF283D3A),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        Expanded(
-                          child: _buildStatItem(
-                            Icons.people, 
-                            '${_spot?['VisitCount'] ?? 0} Visits'
-                          ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatItem(
+                                Icons.favorite, 
+                                '${_spot?['FavoritesCount'] ?? 0}',
+                                'Likes',
+                                Colors.red,
+                              ),
+                            ),
+                            Container(
+                              height: 40,
+                              width: 1,
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                            Expanded(
+                              child: _buildStatItem(
+                                Icons.people, 
+                                '${_spot?['VisitCount'] ?? 0}',
+                                'Visits',
+                                Colors.blue,
+                              ),
+                            ),
+                            Container(
+                              height: 40,
+                              width: 1,
+                              color: Colors.white.withOpacity(0.2),
+                            ),
+                            Expanded(
+                              child: _buildStatItem(
+                                Icons.calendar_today, 
+                                _spot?['CreatedAt'] != null 
+                                  ? DateFormat.yMd().format(DateTime.parse(_spot!['CreatedAt'])) 
+                                  : 'N/A',
+                                'Created',
+                                Colors.green,
+                              ),
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: _buildStatItem(
-                            Icons.calendar_today, 
-                            _spot?['CreatedAt'] != null 
-                              ? DateFormat.yMd().format(DateTime.parse(_spot!['CreatedAt'])) 
-                              : 'N/A'
-                          ),
-                        ),
-                      ],
-                    ),
-                      
-                      SizedBox(height: 20),
-                      
-                      // Weather Info
-                      Row(
-                        children: [
-                          Icon(Icons.wb_sunny, color: Colors.amber),
-                          SizedBox(width: 10),
-                           Flexible(
-                          child: Text(
-                            'Recommended Weather: ${_spot?['RecommendedWeather'] ?? 'Any'}',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ),
-                        ],
                       ),
                       
                       SizedBox(height: 20),
                       
+                      // Weather Info
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF283D3A),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.wb_sunny, color: Colors.amber, size: 24),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Recommended Weather',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.7), 
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '${_spot?['RecommendedWeather'] ?? 'Any'}',
+                                    style: TextStyle(
+                                      color: Colors.white, 
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      SizedBox(height: 24),
+                      
                       // Like Button
                       Center(
-                        child: ElevatedButton.icon(
-                         onPressed: (_isLiked || _isLiking) ? null : _likeSpot,
-                         icon: _isLiked
-                                    ? Icon(Icons.favorite, color: Colors.red)
-                                    : _isLiking 
-                                        ? CircularProgressIndicator(color: Colors.white)
-                                        : Icon(Icons.favorite_border),
-                          label: Text(_isLiked ? 'Liked!' : 'Like this spot'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFDDA15E),
-                            foregroundColor: Colors.black,
-                            padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        child: Container(
+                          width: double.infinity,
+                          height: 56,
+                          child: ElevatedButton.icon(
+                            onPressed: (_isLiked || _isLiking) ? null : _likeSpot,
+                            icon: _isLiked
+                                ? Icon(Icons.favorite, color: Colors.red, size: 24)
+                                : _isLiking 
+                                    ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(Icons.favorite_border, color: Colors.white, size: 24),
+                            label: Text(
+                              _isLiked ? 'Liked!' : 'Like this spot',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: _isLiked ? Colors.red : Colors.white,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isLiked 
+                                  ? Colors.white 
+                                  : Color(0xFFDDA15E),
+                              foregroundColor: _isLiked ? Colors.red : Colors.white,
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -351,83 +490,204 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
                         'Reviews',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 20,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       
-                      Divider(color: Colors.white30),
+                      SizedBox(height: 16),
                       
                       // Add Review
-                      TextField(
-                        controller: _reviewController,
-                        maxLines: 3,
-                        decoration: InputDecoration(
-                          hintText: 'Write your review...',
-                          hintStyle: TextStyle(color: Colors.white54),
-                          border: OutlineInputBorder(),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
-                          suffixIcon: _isReviewing
-                              ? CircularProgressIndicator()
-                              : IconButton(
-                                  icon: Icon(Icons.send),
-                                  onPressed: _submitReview,
-                                ),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Color(0xFF283D3A),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        style: TextStyle(color: Colors.white),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Write a review',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            TextField(
+                              controller: _reviewController,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: 'Share your experience...',
+                                hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Color(0xFFDDA15E), width: 2),
+                                ),
+                                filled: true,
+                                fillColor: Color(0xFF162927),
+                              ),
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton.icon(
+                                onPressed: _isReviewing ? null : _submitReview,
+                                icon: _isReviewing
+                                    ? SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : Icon(Icons.send, size: 18),
+                                label: Text(_isReviewing ? 'Posting...' : 'Post Review'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFFDDA15E),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       
                       SizedBox(height: 20),
                       
                       // Reviews List
                       if (_reviews.isEmpty)
-                        Center(
-                          child: Text(
-                            'No reviews yet',
-                            style: TextStyle(color: Colors.white70),
+                        Container(
+                          padding: EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: Color(0xFF283D3A),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.rate_review_outlined, 
+                                     size: 48, color: Colors.white.withOpacity(0.5)),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No reviews yet',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Be the first to share your experience!',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         )
                       else
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: _reviews.length,
-                          itemBuilder: (context, index) {
-                            final review = _reviews[index];
+                        Column(
+                          children: _reviews.map((review) {
                             final createdAt = review['CreatedAt'] != null
                                 ? DateTime.parse(review['CreatedAt'])
                                 : null;
                             
-                            return Card(
-                              color: Color(0xFF283D3A),
-                              margin: EdgeInsets.only(bottom: 10),
-                              child: ListTile(
-                                leading: Icon(Icons.person, color: Colors.amber),
-                                title: Text(
-                                  review['Text'] ?? '',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                subtitle: createdAt != null
-                                    ? Text(
-                                        DateFormat.yMMMd().add_jm().format(createdAt),
-                                        style: TextStyle(color: Colors.white70),
-                                      )
-                                    : null,
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.favorite, color: Colors.red, size: 16),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      '${review['Likes'] ?? 0}',
-                                      style: TextStyle(color: Colors.white70),
-                                    ),
-                                  ],
+                            return Container(
+                              margin: EdgeInsets.only(bottom: 12),
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Color(0xFF283D3A),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
                                 ),
                               ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(Icons.person, 
+                                                 color: Colors.amber, size: 20),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Anonymous User',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            if (createdAt != null)
+                                              Text(
+                                                DateFormat.yMMMd().add_jm().format(createdAt),
+                                                style: TextStyle(
+                                                  color: Colors.white.withOpacity(0.6),
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.favorite, 
+                                               color: Colors.red, size: 16),
+                                          SizedBox(width: 4),
+                                          Text(
+                                            '${review['Likes'] ?? 0}',
+                                            style: TextStyle(
+                                              color: Colors.white.withOpacity(0.8),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    review['Text'] ?? '',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 15,
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             );
-                          },
+                          }).toList(),
                         ),
                     ],
                   ),
@@ -435,21 +695,40 @@ class _SpotDetailScreenState extends State<SpotDetailScreen> {
     );
   }
 
-  Widget _buildStatItem(IconData icon, String text) {
+  Widget _buildStatItem(IconData icon, String value, String label, Color iconColor) {
     return Column(
-       mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(icon, color: Colors.amber),
-      SizedBox(height: 5),
-      // Add text wrapping with center alignment
-      Text(
-        text,
-        style: TextStyle(color: Colors.white),
-        textAlign: TextAlign.center,
-        maxLines: 2, // Allow up to 2 lines
-        overflow: TextOverflow.ellipsis, // Add ellipsis if too long
-      ),
-    ],
-  );
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        SizedBox(height: 2),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 12,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
   }
 }

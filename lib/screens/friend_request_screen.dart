@@ -134,14 +134,15 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
     return Scaffold(
       body: Stack(
         children: [
+          // Background with darker overlay for better text contrast
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage('images/background.png'),
                 fit: BoxFit.cover,
                 colorFilter: ColorFilter.mode(
-                  Color.fromRGBO(255, 255, 255, 0.15),
-                  BlendMode.lighten,
+                  Color.fromRGBO(0, 0, 0, 0.3), // Darker overlay
+                  BlendMode.darken,
                 ),
               ),
             ),
@@ -149,8 +150,20 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
           SafeArea(
             child: Column(
               children: [
-                Padding(
+                // Header with improved styling and contrast
+                Container(
                   padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.7),
+                        Colors.black.withOpacity(0.3),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
                   child: Row(
                     children: [
                       CustomBackButton(
@@ -162,7 +175,14 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: Colors.white, // Changed to white for visibility
+                          shadows: [
+                            Shadow(
+                              offset: Offset(1, 1),
+                              blurRadius: 3,
+                              color: Colors.black54,
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
@@ -172,14 +192,24 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [Colors.orange, Colors.deepOrange],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: Text(
                           '${friendRequests.length}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
+                            fontSize: 16,
                           ),
                         ),
                       ),
@@ -188,36 +218,63 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                 ),
                 Expanded(
                   child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                          ),
+                        )
                       : friendRequests.isEmpty
-                          ? const Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.person_add_disabled,
-                                    size: 64,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No friend requests',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey,
-                                      fontWeight: FontWeight.bold,
+                          ? Center(
+                              child: Container(
+                                padding: EdgeInsets.all(32),
+                                margin: EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.95),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      offset: Offset(0, 10),
                                     ),
-                                  ),
-                                  SizedBox(height: 8),
-                                  Text(
-                                    'When someone sends you a friend request,\nit will appear here.',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.person_add_disabled,
+                                        size: 64,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(height: 24),
+                                    Text(
+                                      'No friend requests',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        color: Colors.grey[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    SizedBox(height: 12),
+                                    Text(
+                                      'When someone sends you a friend request,\nit will appear here.',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             )
                           : ListView.builder(
@@ -230,32 +287,61 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                                 final profilePic = request['profile_pic'];
                                 final requestTime = request['request_time'] as DateTime;
 
-                                return Card(
+                                return Container(
                                   margin: const EdgeInsets.only(bottom: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Colors.white.withOpacity(0.98),
+                                        Colors.white.withOpacity(0.95),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.15),
+                                        blurRadius: 15,
+                                        offset: Offset(0, 8),
+                                      ),
+                                    ],
                                   ),
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
+                                    padding: const EdgeInsets.all(20.0),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
-                                            CircleAvatar(
-                                              radius: 25,
-                                              backgroundImage: profilePic != null && profilePic.isNotEmpty
-                                                  ? NetworkImage(profilePic)
-                                                  : null,
-                                              child: (profilePic == null || profilePic.isEmpty)
-                                                  ? Text(
-                                                      displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                                                      style: const TextStyle(
-                                                        fontSize: 20,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
-                                                    )
-                                                  : null,
+                                            Container(
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.orange.withOpacity(0.3),
+                                                    blurRadius: 8,
+                                                    offset: Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: CircleAvatar(
+                                                radius: 28,
+                                                backgroundColor: Colors.orange.withOpacity(0.2),
+                                                backgroundImage: profilePic != null && profilePic.isNotEmpty
+                                                    ? NetworkImage(profilePic)
+                                                    : null,
+                                                child: (profilePic == null || profilePic.isEmpty)
+                                                    ? Text(
+                                                        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
+                                                        style: TextStyle(
+                                                          fontSize: 24,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Colors.orange[700],
+                                                        ),
+                                                      )
+                                                    : null,
+                                              ),
                                             ),
                                             const SizedBox(width: 16),
                                             Expanded(
@@ -264,24 +350,34 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                                                 children: [
                                                   Text(
                                                     displayName,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 16,
+                                                      fontSize: 18,
+                                                      color: Colors.grey[800],
                                                     ),
                                                   ),
                                                   const SizedBox(height: 4),
                                                   Text(
                                                     '@$username',
-                                                    style: const TextStyle(
-                                                      color: Colors.grey,
+                                                    style: TextStyle(
+                                                      color: Colors.grey[600],
+                                                      fontSize: 14,
                                                     ),
                                                   ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    _getTimeAgo(requestTime),
-                                                    style: const TextStyle(
-                                                      color: Colors.grey,
-                                                      fontSize: 12,
+                                                  const SizedBox(height: 6),
+                                                  Container(
+                                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.orange.withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Text(
+                                                      _getTimeAgo(requestTime),
+                                                      style: TextStyle(
+                                                        color: Colors.orange[700],
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
@@ -289,30 +385,82 @@ class _FriendRequestsScreenState extends State<FriendRequestsScreen> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 16),
+                                        const SizedBox(height: 20),
                                         Row(
                                           children: [
                                             Expanded(
-                                              child: ElevatedButton(
-                                                onPressed: () => _acceptFriendRequest(request),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.green,
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [Colors.green, Colors.green[600]!],
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.green.withOpacity(0.3),
+                                                      blurRadius: 8,
+                                                      offset: Offset(0, 4),
+                                                    ),
+                                                  ],
                                                 ),
-                                                child: const Text('Accept'),
+                                                child: ElevatedButton(
+                                                  onPressed: () => _acceptFriendRequest(request),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.transparent,
+                                                    foregroundColor: Colors.white,
+                                                    shadowColor: Colors.transparent,
+                                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Icon(Icons.check, size: 18),
+                                                      SizedBox(width: 6),
+                                                      Text('Accept', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             ),
-                                            const SizedBox(width: 16),
+                                            const SizedBox(width: 12),
                                             Expanded(
-                                              child: ElevatedButton(
-                                                onPressed: () => _declineFriendRequest(request),
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                  foregroundColor: Colors.white,
-                                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    colors: [Colors.red, Colors.red[600]!],
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.red.withOpacity(0.3),
+                                                      blurRadius: 8,
+                                                      offset: Offset(0, 4),
+                                                    ),
+                                                  ],
                                                 ),
-                                                child: const Text('Decline'),
+                                                child: ElevatedButton(
+                                                  onPressed: () => _declineFriendRequest(request),
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: Colors.transparent,
+                                                    foregroundColor: Colors.white,
+                                                    shadowColor: Colors.transparent,
+                                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Icon(Icons.close, size: 18),
+                                                      SizedBox(width: 6),
+                                                      Text('Decline', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                                    ],
+                                                  ),
+                                                ),
                                               ),
                                             ),
                                           ],

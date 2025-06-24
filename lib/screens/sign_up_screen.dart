@@ -88,19 +88,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         return;
                       }
 
-                      final response = await AuthService.register(email, username, password);
-                      if (response.statusCode == 201) {
-                        print('User created');
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => ProfileScreen()),
-                        );
-                      } else {
-                        print('Error: ${response.body}');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: ${response.body}")),
-                        );
-                      }
+                   try {
+  final response = await AuthService.register(email, username, password);
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => ProfileScreen()),
+  );
+} catch (e) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Registration failed: $e')),
+  );
+}
                     },
                   ),
                   const SizedBox(height: 10),

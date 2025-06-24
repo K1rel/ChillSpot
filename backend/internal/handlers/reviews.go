@@ -70,58 +70,6 @@ func CreateReviewHandler(db *gorm.DB) http.HandlerFunc {
 	}
 }
 
-// handlers/reviews.go
-func GetUserReviewsHandler(db *gorm.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := r.Context().Value("user_id").(string)
-		if !ok || userID == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		userUUID, err := uuid.Parse(userID)
-		if err != nil {
-			http.Error(w, "Invalid user ID", http.StatusBadRequest)
-			return
-		}
-
-		// Query reviews with spot information using JOIN
-		type ReviewWithSpot struct {
-			models.Review
-			SpotTitle string `json:"spot_title"`
-		}
-
-		var reviews []ReviewWithSpot
-
-		query := `
-            SELECT reviews.*, spots.title as spot_title 
-            FROM reviews
-            JOIN spots ON spots.id = reviews.spot_id
-            WHERE reviews.user_id = ?
-        `
-
-		if err := db.Raw(query, userUUID).Scan(&reviews).Error; err != nil {
-			http.Error(w, "Failed to fetch reviews", http.StatusInternalServerError)
-			return
-		}
-
-		// Format response
-		response := make([]map[string]interface{}, len(reviews))
-		for i, review := range reviews {
-			response[i] = map[string]interface{}{
-				"id":         review.ID,
-				"text":       review.Text,
-				"likes":      review.Likes,
-				"created_at": review.CreditedAt,
-				"spot_title": review.SpotTitle,
-			}
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
-	}
-}
-
 func GetSpotReviewsHandler(db *gorm.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
@@ -135,5 +83,118 @@ func GetSpotReviewsHandler(db *gorm.DB) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(reviews)
+	}
+}
+
+func GetUserReviewsHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := r.Context().Value("user_id").(string)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		var reviews []models.Review
+		if err := db.Preload("Spot").Where("user_id = ?", userUUID).Find(&reviews).Error; err != nil {
+			http.Error(w, "Failed to fetch reviews", http.StatusInternalServerError)
+			return
+		}
+
+		// Format response
+		response := make([]map[string]interface{}, len(reviews))
+		for i, r := range reviews {
+			response[i] = map[string]interface{}{
+				"id":         r.ID,
+				"spot_id":    r.SpotID,
+				"spot_title": r.Spot.Title,
+				"text":       r.Text,
+				"likes":      r.Likes,
+				"created_at": r.CreditedAt,
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+}
+
+func UpdateReviewHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		reviewID := vars["id"]
+
+		userID, ok := r.Context().Value("user_id").(string)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		var input struct {
+			Text string `json:"text"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		var review models.Review
+		if err := db.Where("id = ? AND user_id = ?", reviewID, userUUID).First(&review).Error; err != nil {
+			http.Error(w, "Review not found or unauthorized", http.StatusNotFound)
+			return
+		}
+
+		review.Text = input.Text
+		if err := db.Save(&review).Error; err != nil {
+			http.Error(w, "Failed to update review", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Review updated successfully"})
+	}
+}
+
+func DeleteReviewHandler(db *gorm.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		reviewID := vars["id"]
+
+		userID, ok := r.Context().Value("user_id").(string)
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		result := db.Where("id = ? AND user_id = ?", reviewID, userUUID).Delete(&models.Review{})
+		if result.Error != nil {
+			http.Error(w, "Failed to delete review", http.StatusInternalServerError)
+			return
+		}
+
+		if result.RowsAffected == 0 {
+			http.Error(w, "Review not found or unauthorized", http.StatusNotFound)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "Review deleted successfully"})
 	}
 }

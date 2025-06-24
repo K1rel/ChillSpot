@@ -2,13 +2,14 @@ package routes
 
 import (
 	"chillspot-backend/internal/handlers"
+	"chillspot-backend/internal/mailer"
 	"chillspot-backend/internal/middleware"
 
 	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
 
-func SetupRoutes(db *gorm.DB) *mux.Router {
+func SetupRoutes(db *gorm.DB, mailer *mailer.Mailer) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(middleware.CorsMiddleware)
 	r.HandleFunc("/register", handlers.Register(db)).Methods("POST")
@@ -21,6 +22,8 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 	protected.HandleFunc("/profile", handlers.GetProfile(db)).Methods("GET")
 	protected.HandleFunc("/profile", handlers.UpdateProfile(db)).Methods("PUT")
 
+	r.HandleFunc("/forgot-password", handlers.ForgotPassword(db, mailer)).Methods("POST")
+	r.HandleFunc("/reset-password", handlers.ResetPassword(db)).Methods("POST")
 	// Spot management
 	protected.HandleFunc("/spots", handlers.AddSpotHandler(db)).Methods("POST")
 	protected.HandleFunc("/spots/user", handlers.GetSpotsByUserHandler(db)).Methods("GET")
@@ -35,6 +38,9 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 	//Review endpoints
 	protected.HandleFunc("/reviews", handlers.CreateReviewHandler(db)).Methods("POST")
 	protected.HandleFunc("/reviews/user", handlers.GetUserReviewsHandler(db)).Methods("GET")
+	// Add to routes.go
+	protected.HandleFunc("/reviews/{id}", handlers.UpdateReviewHandler(db)).Methods("PUT")
+	protected.HandleFunc("/reviews/{id}", handlers.DeleteReviewHandler(db)).Methods("DELETE")
 
 	protected.HandleFunc("/spots/{id}", handlers.GetSpotHandler(db)).Methods("GET")
 	protected.HandleFunc("/spots/{id}/like", handlers.LikeSpotHandler(db)).Methods("POST")
@@ -42,6 +48,10 @@ func SetupRoutes(db *gorm.DB) *mux.Router {
 
 	// Review routes
 	protected.HandleFunc("/reviews/spot/{spotId}", handlers.GetSpotReviewsHandler(db)).Methods("GET")
+
+	// Badge routes
+	protected.HandleFunc("/badges/check", handlers.CheckBadgesHandler(db)).Methods("POST")
+	protected.HandleFunc("/badges", handlers.GetUserBadgesHandler(db)).Methods("GET")
 
 	//Friend routes
 	// Friend routes
