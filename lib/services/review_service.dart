@@ -1,10 +1,11 @@
 // services/review_service.dart
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ReviewService {
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
   static Future<void> createReview({
     required String spotId,
@@ -12,7 +13,7 @@ class ReviewService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) {
       throw Exception('User not authenticated');
     }
@@ -37,7 +38,7 @@ class ReviewService {
   static Future<List<dynamic>> getUserReviews() async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }
@@ -59,7 +60,7 @@ class ReviewService {
 static Future<List<dynamic>> getReviewsForSpot(String spotId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }
@@ -85,7 +86,7 @@ static Future<void> updateReview({
 }) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }
@@ -109,7 +110,7 @@ static Future<void> updateReview({
 static Future<void> deleteReview(String reviewId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }

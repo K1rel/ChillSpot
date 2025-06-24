@@ -1,9 +1,10 @@
     import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VisitedSpotService {
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
   static Future<Map<String, dynamic>> addVisitedSpot({
     required String spotId,
@@ -11,7 +12,7 @@ class VisitedSpotService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) {
       throw Exception('User not authenticated');
     }
@@ -32,7 +33,7 @@ class VisitedSpotService {
     final data = json.decode(response.body);
     return {
       'success': true,
-      'xp_gained': data['xp_gained'] ?? 10, 
+      'xp_gained': data['xp_gained'] ?? 10,
       'visited_spot': data['visited_spot'],
     };
   } else {
@@ -43,7 +44,7 @@ class VisitedSpotService {
   static Future<List<dynamic>> getVisitedSpots() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) {
       throw Exception('User not authenticated');
     }
@@ -68,7 +69,7 @@ class VisitedSpotService {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) {
       throw Exception('User not authenticated');
     }

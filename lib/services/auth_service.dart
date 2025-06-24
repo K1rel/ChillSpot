@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
  static Future<Map<String, dynamic>> register(String email, String username, String password) async {
   final response = await http.post(
@@ -22,12 +23,12 @@ class AuthService {
     final data = jsonDecode(response.body);
     final token = data['token'];
     final userId = data['user_id'];
-    
+
     // Store token and user ID
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
     await prefs.setString('user_id', userId);
-    
+
     return data;
   } else {
     throw Exception('Registration failed: ${response.body}');
@@ -48,12 +49,12 @@ class AuthService {
       final data = jsonDecode(response.body);
       final token = data['token'];
       final userId = data['user_id'];
-      
+
       // Store token and user ID
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
       await prefs.setString('user_id', userId);
-      
+
       return data; // Return the parsed data as Map
     } else {
       throw Exception('Login failed: ${response.body}');
@@ -104,7 +105,7 @@ class AuthService {
     if (profileImage != null) {
       var fileStream = http.ByteStream(profileImage.openRead());
       var length = await profileImage.length();
-      
+
       var multipartFile = http.MultipartFile(
         'profileImage',
         fileStream,
@@ -154,7 +155,7 @@ static Future<void> resetPassword(String email, String code, String newPassword)
   }
 }
 }
-  
 
-  
+
+
 

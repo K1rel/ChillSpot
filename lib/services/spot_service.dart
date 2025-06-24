@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SpotService {
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
  static Future<void> saveSpotToServer({
   required double lat,
@@ -18,7 +19,7 @@ class SpotService {
 }) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }
@@ -27,14 +28,14 @@ class SpotService {
   var request = http.MultipartRequest('POST', Uri.parse('$_baseUrl/spots'));
   request.headers['Authorization'] = 'Bearer $token';
   request.fields['altitude'] = altitude.toString();
-  
+
   // Add text fields
   request.fields['latitude'] = lat.toString();
   request.fields['longitude'] = lng.toString();
   request.fields['title'] = title;
   request.fields['description'] = desc;
   request.fields['weather'] = weather;
-  
+
   // Add day image if exists
   if (dayImage != null) {
     request.files.add(
@@ -45,7 +46,7 @@ class SpotService {
       ),
     );
   }
-  
+
   // Add night image if exists
   if (nightImage != null) {
     request.files.add(
@@ -60,7 +61,7 @@ class SpotService {
   // Send request
   var response = await request.send();
   var responseBody = await response.stream.bytesToString();
-  
+
   if (response.statusCode != 201) {
     throw Exception('Failed to save spot: $responseBody');
   }
@@ -70,7 +71,7 @@ class SpotService {
     // Get token from shared preferences
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) {
       throw Exception('User not authenticated');
     }
@@ -92,7 +93,7 @@ class SpotService {
 static Future<Map<String, dynamic>> getSpotById(String spotId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }
@@ -106,28 +107,28 @@ static Future<Map<String, dynamic>> getSpotById(String spotId) async {
 
   if (response.statusCode == 200) {
     final data = json.decode(response.body);
-    
+
     // Debug print to see what we're getting
     print('Raw response data: $data');
-    
+
     // Create the response object with proper image URL construction
     Map<String, dynamic> result = {
       ...data,
       'FavoritesCount': data['favorites_count'] ?? 0,
       'VisitCount': data['visit_count'] ?? 0,
     };
-    
+
     // Construct image URLs if images exist
     if (data['DayImage'] != null && data['DayImage'].toString().isNotEmpty) {
       result['DayImageUrl'] = '$_baseUrl/images/${data['DayImage']}';
       print('Day image URL: ${result['DayImageUrl']}');
     }
-    
+
     if (data['NightImage'] != null && data['NightImage'].toString().isNotEmpty) {
       result['NightImageUrl'] = '$_baseUrl/images/${data['NightImage']}';
       print('Night image URL: ${result['NightImageUrl']}');
     }
-    
+
     return result;
   } else {
     throw Exception('Failed to load spot: ${response.body}');
@@ -137,7 +138,7 @@ static Future<Map<String, dynamic>> getSpotById(String spotId) async {
 static Future<void> likeSpot(String spotId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null)  {
     throw Exception('User not authenticated');
   }
@@ -157,7 +158,7 @@ static Future<void> likeSpot(String spotId) async {
 static Future<void> trackVisit(String spotId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('token');
-  
+
   if (token == null) {
     throw Exception('User not authenticated');
   }

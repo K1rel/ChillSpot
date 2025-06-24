@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FriendService {
-  static const String _baseUrl = 'http://10.0.2.2:8080';
+  static String get _baseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8080';
 
   static Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
@@ -36,9 +37,9 @@ class FriendService {
       headers: headers,
       body: json.encode({'query': query, 'limit': 10}),
     );
-    
+
     print('Search response: ${response.statusCode} ${response.body}'); // Debug
-    
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data is List) {
@@ -61,7 +62,7 @@ class FriendService {
       headers: headers,
       body: json.encode({'receiver_id': receiverId}),
     );
-    
+
     if (response.statusCode == 201) {
       return 'success';
     } else if (response.statusCode == 409) {
@@ -82,7 +83,7 @@ class FriendService {
       Uri.parse('$_baseUrl/friends/requests'),
       headers: headers,
     );
-    
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data is List) {
@@ -132,7 +133,7 @@ class FriendService {
       Uri.parse('$_baseUrl/friends'),
       headers: headers,
     );
-    
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data is List) {
@@ -154,7 +155,7 @@ class FriendService {
         Uri.parse('$_baseUrl/friends/spots'),
         headers: headers,
       );
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data is List) {

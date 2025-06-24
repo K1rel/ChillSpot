@@ -29,15 +29,15 @@ class BadgeService {
 
       if (response.statusCode == 200) {
         final dynamic rawData = json.decode(response.body);
-        
+
         if (rawData == null) {
           return BadgeCheckResponse(newBadges: [], allBadges: []);
         }
-        
+
         if (rawData is! Map<String, dynamic>) {
           throw Exception('Invalid response format: expected Map but got ${rawData.runtimeType}');
         }
-        
+
         return BadgeCheckResponse.fromJson(rawData);
       } else {
         throw Exception('Failed to check badges: ${response.statusCode} - ${response.body}');
@@ -70,15 +70,15 @@ class BadgeService {
 
       if (response.statusCode == 200) {
         final dynamic rawData = json.decode(response.body);
-        
+
         if (rawData == null) {
           return [];
         }
-        
+
         if (rawData is! List) {
           throw Exception('Invalid response format: expected List but got ${rawData.runtimeType}');
         }
-        
+
         return rawData.map((json) => AchievementBadge.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load user badges: ${response.statusCode} - ${response.body}');

@@ -132,7 +132,7 @@ func saveImage(r *http.Request, fieldName string) (string, error) {
 	defer file.Close()
 
 	// Create images directory if it doesn't exist
-	err = os.MkdirAll("internal/images", os.ModePerm)
+	err = os.MkdirAll("images", os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -143,7 +143,7 @@ func saveImage(r *http.Request, fieldName string) (string, error) {
 		ext = ".jpg"
 	}
 	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	filePath := filepath.Join("internal", "images", filename)
+	filePath := filepath.Join("images", filename)
 
 	// Save file
 	out, err := os.Create(filePath)
